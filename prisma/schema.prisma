@@ -1,0 +1,118 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  VENDOR
+}
+
+enum AgentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         UserRole  @default(CUSTOMER)
+  fullName     String    @map("full_name")
+  companyName  String?   @map("company_name")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  agents       Agent[]
+  orders       Order[]
+  userAgents   UserAgent[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Agent {
+  id          String       @id @default(uuid())
+  vendorId    String       @map("vendor_id")
+  name        String
+  description String
+  price       Decimal      @db.Decimal(10, 2)
+  status      AgentStatus  @default(ACTIVE)
+  imageUrl    String?      @map("image_url")
+  demoUrl     String?      @map("demo_url")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  vendor      User         @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  orders      Order[]
+  userAgents  UserAgent[]
+
+  @@index([vendorId])
+  @@index([status])
+  @@map("agents")
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  userId          String      @map("user_id")
+  agentId         String      @map("agent_id")
+  amount          Decimal     @db.Decimal(10, 2)
+  status          OrderStatus @default(PENDING)
+  stripePaymentId String?     @map("stripe_payment_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent      Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  userAgents UserAgent[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model UserAgent {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  agentId     String   @map("agent_id")
+  orderId     String   @map("order_id")
+  apiKey      String   @unique @map("api_key")
+  purchasedAt DateTime @default(now()) @map("purchased_at")
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent  Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agentId])
+  @@map("user_agents")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  sessionToken String   @unique @map("session_token")
+  expires      DateTime
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionToken])
+  @@map("sessions")
+}
