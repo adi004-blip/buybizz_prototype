@@ -116,3 +116,5 @@ model Session {
   @@index([sessionToken])
   @@map("sessions")
 }
+
+#this is just the schema, there is no DATABASE_URL for this, that why i have not run any prisma generator.
