@@ -45,9 +45,9 @@ export default function AboutPage() {
           <Card className="bg-pink-400">
             <CardContent className="p-8">
               <Shield className="w-16 h-16 mb-4" />
-              <h3 className="neo-heading text-2xl mb-4">SECURITY</h3>
+              <h3 className="neo-heading text-2xl mb-4">INSTANT DELIVERY</h3>
               <p className="neo-text">
-                BULLETPROOF PROTECTION FOR VENDORS AND CUSTOMERS. YOUR DATA IS SAFE WITH US.
+                GET YOUR AI AGENT IMMEDIATELY AFTER PURCHASE. NO WAITING AROUND.
               </p>
             </CardContent>
           </Card>
