@@ -1,26 +1,168 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+@custom-variant dark (&:is(.dark *));
+
+/* Neobrutalism Design System */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core Colors */
+  --neo-black: #000000;
+  --neo-white: #ffffff;
+  --neo-yellow: #ffff00;
+  --neo-pink: #ff00ff;
+  --neo-cyan: #00ffff;
+  --neo-green: #00ff00;
+  --neo-red: #ff0000;
+  --neo-blue: #0000ff;
+  --neo-orange: #ff8000;
+  --neo-purple: #8000ff;
+  
+  /* Grays */
+  --neo-gray-100: #f5f5f5;
+  --neo-gray-200: #e5e5e5;
+  --neo-gray-300: #d4d4d4;
+  --neo-gray-800: #262626;
+  --neo-gray-900: #171717;
+  
+  /* Shadows */
+  --neo-shadow-sm: 2px 2px 0px var(--neo-black);
+  --neo-shadow-md: 4px 4px 0px var(--neo-black);
+  --neo-shadow-lg: 6px 6px 0px var(--neo-black);
+  --neo-shadow-xl: 8px 8px 0px var(--neo-black);
+  
+  /* Borders */
+  --neo-border: 3px solid var(--neo-black);
+  --neo-border-thick: 5px solid var(--neo-black);
+  
+  /* Radius */
+  --neo-radius: 0px; /* Sharp corners for brutalism */
+  --neo-radius-sm: 4px; /* Minimal rounding when needed */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--neo-white);
+  --color-foreground: var(--neo-black);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Neobrutalism color mappings */
+  --color-primary: var(--neo-black);
+  --color-primary-foreground: var(--neo-white);
+  --color-secondary: var(--neo-yellow);
+  --color-secondary-foreground: var(--neo-black);
+  --color-accent: var(--neo-pink);
+  --color-accent-foreground: var(--neo-black);
+  --color-muted: var(--neo-gray-100);
+  --color-muted-foreground: var(--neo-gray-800);
+  --color-destructive: var(--neo-red);
+  --color-destructive-foreground: var(--neo-white);
+  --color-border: var(--neo-black);
+  --color-input: var(--neo-white);
+  --color-ring: var(--neo-black);
+  --color-card: var(--neo-white);
+  --color-card-foreground: var(--neo-black);
+  --color-popover: var(--neo-white);
+  --color-popover-foreground: var(--neo-black);
+  
+  /* Radius */
+  --radius: var(--neo-radius);
+  --radius-sm: var(--neo-radius);
+  --radius-md: var(--neo-radius);
+  --radius-lg: var(--neo-radius);
+  --radius-xl: var(--neo-radius);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-weight: 600; /* Bold text for brutalism */
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* Neobrutalism utility classes */
+  .neo-shadow-sm { 
+    box-shadow: var(--neo-shadow-sm); 
+  }
+  .neo-shadow-md { 
+    box-shadow: var(--neo-shadow-md); 
+  }
+  .neo-shadow-lg { 
+    box-shadow: var(--neo-shadow-lg); 
+  }
+  .neo-shadow-xl { 
+    box-shadow: var(--neo-shadow-xl); 
+  }
+  
+  .neo-border { 
+    border: var(--neo-border); 
+  }
+  .neo-border-thick { 
+    border: var(--neo-border-thick); 
+  }
+  
+  .neo-btn {
+    @apply px-6 py-3 font-bold text-lg uppercase tracking-wide;
+    border: var(--neo-border);
+    box-shadow: var(--neo-shadow-md);
+    @apply transition-all duration-150;
+    @apply hover:translate-x-1 hover:translate-y-1 hover:shadow-none;
+    @apply active:translate-x-2 active:translate-y-2 active:shadow-none;
+  }
+  
+  .neo-btn-primary {
+    @apply px-6 py-3 font-bold text-lg uppercase tracking-wide bg-yellow-400 text-black;
+    border: var(--neo-border);
+    box-shadow: var(--neo-shadow-md);
+    @apply transition-all duration-150;
+    @apply hover:translate-x-1 hover:translate-y-1 hover:shadow-none;
+    @apply active:translate-x-2 active:translate-y-2 active:shadow-none;
+  }
+  
+  .neo-btn-secondary {
+    @apply px-6 py-3 font-bold text-lg uppercase tracking-wide bg-pink-400 text-black;
+    border: var(--neo-border);
+    box-shadow: var(--neo-shadow-md);
+    @apply transition-all duration-150;
+    @apply hover:translate-x-1 hover:translate-y-1 hover:shadow-none;
+    @apply active:translate-x-2 active:translate-y-2 active:shadow-none;
+  }
+  
+  .neo-btn-accent {
+    @apply px-6 py-3 font-bold text-lg uppercase tracking-wide bg-cyan-400 text-black;
+    border: var(--neo-border);
+    box-shadow: var(--neo-shadow-md);
+    @apply transition-all duration-150;
+    @apply hover:translate-x-1 hover:translate-y-1 hover:shadow-none;
+    @apply active:translate-x-2 active:translate-y-2 active:shadow-none;
+  }
+  
+  .neo-card {
+    border: var(--neo-border);
+    box-shadow: var(--neo-shadow-lg);
+    @apply bg-white transition-all duration-200;
+    @apply hover:translate-x-1 hover:translate-y-1;
+  }
+  
+  .neo-card:hover {
+    box-shadow: var(--neo-shadow-md);
+  }
+  
+  .neo-input {
+    border: var(--neo-border);
+    @apply px-4 py-3 text-lg font-semibold;
+    @apply focus:outline-none focus:translate-x-1 focus:translate-y-1 focus:shadow-none;
+  }
+  
+  .neo-heading {
+    @apply font-black uppercase tracking-tight;
+  }
+  
+  .neo-text {
+    @apply font-semibold;
+  }
 }
