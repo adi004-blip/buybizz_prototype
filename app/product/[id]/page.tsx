@@ -111,18 +111,22 @@ export default function ProductPage() {
                   PRODUCT IMAGE
                 </div>
               )}
-              <button
-                onClick={() => setSelectedImage(Math.max(0, selectedImage - 1))}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white neo-border p-3 neo-shadow-md hover:bg-yellow-400 transition-colors"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                onClick={() => setSelectedImage(Math.min(product.images.length - 1, selectedImage + 1))}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white neo-border p-3 neo-shadow-md hover:bg-yellow-400 transition-colors"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setSelectedImage(Math.max(0, selectedImage - 1))}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white neo-border p-3 neo-shadow-md hover:bg-yellow-400 transition-colors"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedImage(Math.min(images.length - 1, selectedImage + 1))}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white neo-border p-3 neo-shadow-md hover:bg-yellow-400 transition-colors"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
             </div>
             {images.length > 1 && (
             <div className="grid grid-cols-4 gap-4">
