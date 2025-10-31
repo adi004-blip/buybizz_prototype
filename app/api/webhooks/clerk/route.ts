@@ -4,6 +4,8 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
+  console.log("[Webhook] Received webhook request");
+  
   // Get the Svix headers for verification
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
@@ -12,6 +14,7 @@ export async function POST(req: Request) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
+    console.error("[Webhook] Missing svix headers");
     return new Response("Error occured -- no svix headers", {
       status: 400,
     });
@@ -25,7 +28,16 @@ export async function POST(req: Request) {
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
+    console.error("[Webhook] CLERK_WEBHOOK_SECRET not configured");
     return new Response("Error: CLERK_WEBHOOK_SECRET not configured", {
+      status: 500,
+    });
+  }
+
+  // Check DATABASE_URL
+  if (!process.env.DATABASE_URL) {
+    console.error("[Webhook] DATABASE_URL not configured");
+    return new Response("Error: DATABASE_URL not configured", {
       status: 500,
     });
   }
@@ -56,24 +68,46 @@ export async function POST(req: Request) {
     const { id, email_addresses, first_name, last_name, username } = evt.data;
 
     try {
+      const email = email_addresses[0]?.email_address || `${id}@clerk.user`;
+      const fullName =
+        first_name && last_name
+          ? `${first_name} ${last_name}`
+          : first_name || last_name || username || "User";
+
+      console.log(`[Webhook] Attempting to create user: ${id}, email: ${email}`);
+
       // Create user in database
-      await db.user.create({
+      const user = await db.user.create({
         data: {
           id: id,
-          email: email_addresses[0]?.email_address || `${id}@clerk.user`,
-          fullName:
-            first_name && last_name
-              ? `${first_name} ${last_name}`
-              : first_name || last_name || username || "User",
+          email: email,
+          fullName: fullName,
           role: "CUSTOMER", // Default role
         },
       });
 
-      console.log(`User created: ${id}`);
-    } catch (error) {
-      console.error("Error creating user:", error);
-      // Don't fail the webhook, just log the error
-      // User will be created on first auth via getCurrentUser fallback
+      console.log(`[Webhook] User created successfully: ${id}`, user);
+    } catch (error: any) {
+      console.error("[Webhook] Error creating user:", {
+        userId: id,
+        error: error.message,
+        code: error.code,
+        meta: error.meta,
+        stack: error.stack,
+      });
+
+      // Return error response so Clerk knows it failed
+      return new Response(
+        JSON.stringify({
+          error: "Failed to create user in database",
+          message: error.message,
+          code: error.code,
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
   }
 
