@@ -7,6 +7,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Filter, Grid, List, Star, ShoppingCart } from "lucide-react";
 
+interface Agent {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number | null;
+  vendor: {
+    id: string;
+    fullName: string;
+    companyName: string | null;
+  };
+  category: string | null;
+  shortDescription: string | null;
+  imageUrl: string | null;
+}
+
 export default function ShopPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
