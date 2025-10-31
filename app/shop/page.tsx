@@ -10,7 +10,10 @@ import { Filter, Grid, List, Star, ShoppingCart } from "lucide-react";
 export default function ShopPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const categories = [
     { id: "all", name: "ALL AGENTS", color: "bg-black" },
