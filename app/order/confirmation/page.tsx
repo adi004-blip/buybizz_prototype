@@ -5,9 +5,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Copy, Download, Key, Mail, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId") || "ORD-123456";
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -199,5 +199,20 @@ export default function OrderConfirmationPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="neo-heading text-4xl mb-4">LOADING ORDER...</h1>
+          <p className="neo-text text-gray-600">Please wait</p>
+        </div>
+      </div>
+    }>
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }
