@@ -21,94 +21,39 @@ export default function ShopPage() {
     { id: "design", name: "DESIGN AI", color: "bg-purple-400" }
   ];
 
-  const products = [
-    {
-      id: 1,
-      name: "AI COPYWRITER PRO",
-      price: 97,
-      originalPrice: 297,
-      vendor: "AIWRITER",
-      rating: 4.9,
-      category: "writing",
-      description: "LIFETIME ACCESS"
-    },
-    {
-      id: 2,
-      name: "CODE ASSISTANT AGENT",
-      price: 149,
-      originalPrice: 499,
-      vendor: "DEVTECH",
-      rating: 4.8,
-      category: "coding",
-      description: "LIFETIME ACCESS"
-    },
-    {
-      id: 3,
-      name: "SOCIAL MEDIA MANAGER AI",
-      price: 79,
-      originalPrice: 199,
-      vendor: "SOCIALAI",
-      rating: 4.9,
-      category: "marketing",
-      description: "LIFETIME ACCESS"
-    },
-    {
-      id: 4,
-      name: "DATA ANALYZER PRO",
-      price: 129,
-      originalPrice: 399,
-      vendor: "DATABOT",
-      rating: 4.7,
-      category: "analytics",
-      description: "LIFETIME ACCESS"
-    },
-    {
-      id: 5,
-      name: "DESIGN ASSISTANT AI",
-      price: 89,
-      originalPrice: 249,
-      vendor: "DESIGNAI",
-      rating: 4.8,
-      category: "design",
-      description: "LIFETIME ACCESS"
-    },
-    {
-      id: 6,
-      name: "EMAIL WRITER AGENT",
-      price: 59,
-      originalPrice: 149,
-      vendor: "AIWRITER",
-      rating: 4.9,
-      category: "writing",
-      description: "LIFETIME ACCESS"
-    },
-    {
-      id: 7,
-      name: "API TESTER AGENT",
-      price: 119,
-      originalPrice: 349,
-      vendor: "DEVTECH",
-      rating: 4.6,
-      category: "coding",
-      description: "LIFETIME ACCESS"
-    },
-    {
-      id: 8,
-      name: "CONTENT SCHEDULER AI",
-      price: 69,
-      originalPrice: 179,
-      vendor: "SOCIALAI",
-      rating: 4.8,
-      category: "marketing",
-      description: "LIFETIME ACCESS"
-    }
-  ];
+  // Fetch agents from API
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        params.append("status", "ACTIVE");
+        if (selectedCategory !== "all") {
+          params.append("category", selectedCategory);
+        }
+        if (searchQuery) {
+          params.append("search", searchQuery);
+        }
 
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-    return matchesCategory && matchesPrice;
-  });
+        const response = await fetch(`/api/agents?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch agents");
+        }
+        const data = await response.json();
+        setAgents(data.agents || []);
+        setError(null);
+      } catch (err: any) {
+        console.error("Error fetching agents:", err);
+        setError(err.message || "Failed to load agents");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgents();
+  }, [selectedCategory, searchQuery]);
+
+  const filteredAgents = agents;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -131,6 +76,8 @@ export default function ShopPage() {
                 type="text"
                 placeholder="SEARCH AI AGENTS, CREATORS, CATEGORIES..."
                 className="flex-1"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             <Button variant="primary">
               <Filter className="w-5 h-5 mr-2" />
@@ -174,16 +121,32 @@ export default function ShopPage() {
               </Button>
             </div>
             <p className="neo-text text-gray-600">
-              {filteredProducts.length} AI AGENTS FOUND
+              {loading ? "LOADING..." : `${filteredAgents.length} AI AGENTS FOUND`}
             </p>
           </div>
         </div>
 
+        {/* Error State */}
+        {error && (
+          <Card className="bg-red-400 mb-6">
+            <CardContent className="p-6">
+              <p className="neo-text text-white">ERROR: {error}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <p className="neo-heading text-2xl">LOADING AI AGENTS...</p>
+          </div>
+        )}
+
         {/* Products Grid/List */}
-        {viewMode === "grid" ? (
+        {!loading && !error && viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <Link key={product.id} href={`/product/${product.id}`}>
+            {filteredAgents.map((agent) => (
+              <Link key={agent.id} href={`/product/${agent.id}`}>
                 <Card className="h-full overflow-hidden cursor-pointer group">
                   <div className="aspect-square bg-gradient-to-br from-purple-400 to-pink-400 relative overflow-hidden flex items-center justify-center">
                     <div className="text-center">
@@ -198,20 +161,20 @@ export default function ShopPage() {
                   </div>
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="neo-heading text-lg line-clamp-2">{product.name}</h3>
-                      <div className="flex items-center gap-1 ml-2">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="neo-text text-sm">{product.rating}</span>
-                      </div>
+                      <h3 className="neo-heading text-lg line-clamp-2">{agent.name}</h3>
                     </div>
-                    <p className="neo-text text-gray-600 text-xs mb-1">by {product.vendor}</p>
-                    <p className="neo-text text-xs text-gray-500 mb-3">{product.description}</p>
+                    <p className="neo-text text-gray-600 text-xs mb-1">
+                      by {agent.vendor.companyName || agent.vendor.fullName}
+                    </p>
+                    <p className="neo-text text-xs text-gray-500 mb-3">
+                      {agent.shortDescription || "LIFETIME ACCESS"}
+                    </p>
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="neo-heading text-2xl">${product.price}</span>
-                        {product.originalPrice && (
+                        <span className="neo-heading text-2xl">${Number(agent.price).toFixed(0)}</span>
+                        {agent.originalPrice && (
                           <span className="neo-text text-sm text-gray-500 line-through ml-2">
-                            ${product.originalPrice}
+                            ${Number(agent.originalPrice).toFixed(0)}
                           </span>
                         )}
                       </div>
@@ -226,31 +189,33 @@ export default function ShopPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredProducts.map((product) => (
-              <Link key={product.id} href={`/product/${product.id}`}>
+            {filteredAgents.map((agent) => (
+              <Link key={agent.id} href={`/product/${agent.id}`}>
                 <Card className="cursor-pointer group">
                   <div className="flex gap-6">
                     <div className="w-48 h-48 bg-gray-200 relative flex-shrink-0">
-                      <div className="absolute inset-0 flex items-center justify-center neo-text text-gray-500">
-                        IMAGE
-                      </div>
+                      {agent.imageUrl ? (
+                        <img src={agent.imageUrl} alt={agent.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center neo-text text-gray-500">
+                          IMAGE
+                        </div>
+                      )}
                     </div>
                     <CardContent className="p-6 flex-1 flex flex-col justify-between">
                       <div>
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="neo-heading text-2xl">{product.name}</h3>
-                          <div className="flex items-center gap-1">
-                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <span className="neo-text">{product.rating}</span>
-                          </div>
+                          <h3 className="neo-heading text-2xl">{agent.name}</h3>
                         </div>
-                        <p className="neo-text text-gray-600 mb-4">by {product.vendor}</p>
+                        <p className="neo-text text-gray-600 mb-4">
+                          by {agent.vendor.companyName || agent.vendor.fullName}
+                        </p>
                         <p className="neo-text text-gray-700">
-                          LIFETIME ACCESS TO THIS AI AGENT. ONE-TIME PAYMENT, FOREVER USE.
+                          {agent.shortDescription || "LIFETIME ACCESS TO THIS AI AGENT. ONE-TIME PAYMENT, FOREVER USE."}
                         </p>
                       </div>
                       <div className="flex justify-between items-center mt-4">
-                        <span className="neo-heading text-3xl">${product.price}</span>
+                        <span className="neo-heading text-3xl">${Number(agent.price).toFixed(0)}</span>
                         <Button className="group-hover:bg-pink-400 transition-colors">
                           ADD TO CART
                           <ShoppingCart className="w-5 h-5 ml-2" />

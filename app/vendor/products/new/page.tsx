@@ -51,11 +51,40 @@ export default function NewProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    // In real app, this would submit to API
-    setTimeout(() => {
+    
+    try {
+      const response = await fetch("/api/agents", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          shortDescription: formData.shortDescription,
+          price: formData.price,
+          originalPrice: formData.originalPrice || null,
+          category: formData.category || null,
+          tags: formData.tags || null,
+          features: formData.features.filter((f) => f.trim()),
+          demoUrl: formData.demoUrl || null,
+          documentationUrl: formData.documentationUrl || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create agent");
+      }
+
+      const agent = await response.json();
+      router.push(`/vendor`);
+    } catch (error: any) {
+      console.error("Error creating agent:", error);
+      alert(`Error: ${error.message || "Failed to create agent"}`);
+    } finally {
       setSaving(false);
-      router.push("/vendor/products");
-    }, 2000);
+    }
   };
 
   return (
