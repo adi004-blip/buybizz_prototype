@@ -280,6 +280,7 @@ export default function VendorDashboard() {
                     </div>
                   ))}
                 </div>
+                )}
               </CardContent>
             </Card>
 
