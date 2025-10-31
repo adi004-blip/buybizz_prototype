@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,31 +21,85 @@ import {
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
+interface Agent {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number | null;
+  status: "ACTIVE" | "INACTIVE";
+  category: string | null;
+  shortDescription: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+}
+
 export default function VendorDashboard() {
   const { user } = useUser();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders" | "analytics">("overview");
+  const [products, setProducts] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data
+  // Fetch vendor's products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/agents?vendorId=${user.id}&status=ACTIVE`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+        const data = await response.json();
+        setProducts(data.agents || []);
+        setError(null);
+      } catch (err: any) {
+        console.error("Error fetching products:", err);
+        setError(err.message || "Failed to load products");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [user?.id]);
+
+  // Calculate stats from real data
   const stats = {
-    totalProducts: 156,
-    totalSales: 2847,
-    totalRevenue: 245890,
-    totalCustomers: 892,
-    monthlyGrowth: 23.5
+    totalProducts: products.length,
+    totalSales: 0, // Will be calculated from orders later
+    totalRevenue: 0, // Will be calculated from orders later
+    totalCustomers: 0, // Will be calculated from orders later
+    monthlyGrowth: 0 // Will be calculated later
   };
 
-  const recentProducts = [
-    { id: 1, name: "WIRELESS HEADPHONES", price: 199, stock: 47, sales: 234, status: "active" },
-    { id: 2, name: "SMART WATCH", price: 299, stock: 23, sales: 189, status: "active" },
-    { id: 3, name: "BLUETOOTH SPEAKER", price: 129, stock: 0, sales: 156, status: "out_of_stock" },
-    { id: 4, name: "WIRELESS CHARGER", price: 39, stock: 89, sales: 412, status: "active" }
-  ];
+  const recentProducts = products.slice(0, 4);
 
-  const recentOrders = [
-    { id: "#ORD-001", customer: "John Doe", product: "WIRELESS HEADPHONES", amount: 199, status: "completed", date: "2024-01-15" },
-    { id: "#ORD-002", customer: "Jane Smith", product: "SMART WATCH", amount: 299, status: "pending", date: "2024-01-14" },
-    { id: "#ORD-003", customer: "Bob Johnson", product: "BLUETOOTH SPEAKER", amount: 129, status: "shipped", date: "2024-01-13" }
-  ];
+  const recentOrders: any[] = []; // Will be populated from orders API later
+  
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm("ARE YOU SURE YOU WANT TO DELETE THIS AI AGENT?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/agents/${productId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete product");
+      }
+
+      // Refresh products list
+      setProducts(products.filter((p) => p.id !== productId));
+    } catch (err: any) {
+      console.error("Error deleting product:", err);
+      alert(`Error: ${err.message || "Failed to delete product"}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -174,32 +229,53 @@ export default function VendorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="neo-border p-4 bg-white flex items-center justify-between"
-                    >
-                      <div className="flex-1">
-                        <h4 className="neo-heading text-lg">{product.name}</h4>
-                        <div className="flex gap-4 mt-2">
-                          <span className="neo-text text-gray-600">Price: ${product.price}</span>
-                          <span className="neo-text text-gray-600">Stock: {product.stock}</span>
-                          <span className="neo-text text-gray-600">Sales: {product.sales}</span>
-                          <span className={`neo-text ${
-                            product.status === "active" ? "text-green-600" : "text-red-600"
-                          }`}>
-                            {product.status === "active" ? "ACTIVE" : "OUT OF STOCK"}
-                          </span>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="neo-text">LOADING PRODUCTS...</p>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8">
+                    <p className="neo-text text-red-500">ERROR: {error}</p>
+                  </div>
+                ) : recentProducts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="neo-text text-gray-600">NO PRODUCTS YET</p>
+                    <Link href="/vendor/products/new">
+                      <Button variant="primary" className="mt-4">
+                        <Plus className="w-5 h-5 mr-2" />
+                        CREATE YOUR FIRST PRODUCT
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {recentProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="neo-border p-4 bg-white flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <h4 className="neo-heading text-lg">{product.name}</h4>
+                          <div className="flex gap-4 mt-2">
+                            <span className="neo-text text-gray-600">Price: ${Number(product.price).toFixed(0)}</span>
+                            <span className={`neo-text ${
+                              product.status === "ACTIVE" ? "text-green-600" : "text-red-600"
+                            }`}>
+                              {product.status === "ACTIVE" ? "ACTIVE" : "INACTIVE"}
+                            </span>
+                          </div>
                         </div>
-                      </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <Link href={`/vendor/products/${product.id}/edit`}>
+                          <Button variant="outline" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        <Link href={`/product/${product.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   ))}
@@ -221,36 +297,42 @@ export default function VendorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="neo-border p-4 bg-white flex items-center justify-between"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-2">
-                          <h4 className="neo-heading text-lg">{order.id}</h4>
-                          <span className={`neo-text px-3 py-1 neo-border neo-shadow-sm ${
-                            order.status === "completed" ? "bg-green-400" :
-                            order.status === "shipped" ? "bg-cyan-400" :
-                            "bg-yellow-400"
-                          }`}>
-                            {order.status.toUpperCase()}
-                          </span>
+                {recentOrders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="neo-text text-gray-600">NO ORDERS YET</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {recentOrders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="neo-border p-4 bg-white flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-4 mb-2">
+                            <h4 className="neo-heading text-lg">{order.id}</h4>
+                            <span className={`neo-text px-3 py-1 neo-border neo-shadow-sm ${
+                              order.status === "completed" ? "bg-green-400" :
+                              order.status === "shipped" ? "bg-cyan-400" :
+                              "bg-yellow-400"
+                            }`}>
+                              {order.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex gap-4">
+                            <span className="neo-text text-gray-600">Customer: {order.customer}</span>
+                            <span className="neo-text text-gray-600">Product: {order.product}</span>
+                            <span className="neo-text text-gray-600">Amount: ${order.amount}</span>
+                            <span className="neo-text text-gray-600">Date: {order.date}</span>
+                          </div>
                         </div>
-                        <div className="flex gap-4">
-                          <span className="neo-text text-gray-600">Customer: {order.customer}</span>
-                          <span className="neo-text text-gray-600">Product: {order.product}</span>
-                          <span className="neo-text text-gray-600">Amount: ${order.amount}</span>
-                          <span className="neo-text text-gray-600">Date: {order.date}</span>
-                        </div>
+                        <Button variant="outline" size="sm">
+                          VIEW DETAILS
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm">
-                        VIEW DETAILS
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -268,37 +350,64 @@ export default function VendorDashboard() {
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recentProducts.map((product) => (
-                <Card key={product.id}>
-                  <div className="aspect-square bg-gray-200 relative">
-                    <div className="absolute inset-0 flex items-center justify-center neo-text text-gray-500">
-                      PRODUCT IMAGE
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="neo-heading text-2xl">LOADING PRODUCTS...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="neo-heading text-2xl text-red-500">ERROR: {error}</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="neo-heading text-2xl mb-4">NO PRODUCTS YET</p>
+                <p className="neo-text text-gray-600 mb-6">START SELLING BY CREATING YOUR FIRST AI AGENT</p>
+                <Link href="/vendor/products/new">
+                  <Button variant="primary" size="lg">
+                    <Plus className="w-5 h-5 mr-2" />
+                    CREATE PRODUCT
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <Card key={product.id}>
+                    <div className="aspect-square bg-gray-200 relative overflow-hidden">
+                      {product.imageUrl ? (
+                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center neo-text text-gray-500">
+                          PRODUCT IMAGE
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <CardContent className="p-6">
-                    <h3 className="neo-heading text-xl mb-2">{product.name}</h3>
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="neo-heading text-2xl">${product.price}</span>
-                      <span className={`neo-text text-sm px-2 py-1 neo-border ${
-                        product.status === "active" ? "bg-green-400" : "bg-red-400"
-                      }`}>
-                        {product.stock} IN STOCK
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1">
-                        <Edit className="w-4 h-4 mr-2" />
-                        EDIT
-                      </Button>
-                      <Button variant="outline">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <CardContent className="p-6">
+                      <h3 className="neo-heading text-xl mb-2">{product.name}</h3>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="neo-heading text-2xl">${Number(product.price).toFixed(0)}</span>
+                        <span className={`neo-text text-sm px-2 py-1 neo-border ${
+                          product.status === "ACTIVE" ? "bg-green-400" : "bg-red-400"
+                        }`}>
+                          {product.status}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link href={`/vendor/products/${product.id}/edit`} className="flex-1">
+                          <Button variant="outline" className="w-full">
+                            <Edit className="w-4 h-4 mr-2" />
+                            EDIT
+                          </Button>
+                        </Link>
+                        <Button variant="outline" onClick={() => handleDeleteProduct(product.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

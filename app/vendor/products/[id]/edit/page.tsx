@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -13,25 +13,59 @@ export default function EditProductPage() {
   const params = useParams();
   const productId = params.id as string;
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock product data - in real app, fetch from API
   const [formData, setFormData] = useState({
-    name: "AI COPYWRITER PRO",
-    description: "PREMIUM AI-POWERED COPYWRITING AGENT WITH ADVANCED FEATURES",
-    shortDescription: "LIFETIME ACCESS TO AI-POWERED COPYWRITING AGENT",
-    price: "97",
-    originalPrice: "297",
-    category: "writing",
-    demoUrl: "https://demo.example.com",
-    documentationUrl: "https://docs.example.com",
-    features: [
-      "ACTIVE NOISE CANCELLATION",
-      "30-HOUR BATTERY LIFE",
-      "PREMIUM SOUND QUALITY"
-    ],
-    tags: "AI, COPYWRITING, MARKETING",
-    status: "active"
+    name: "",
+    description: "",
+    shortDescription: "",
+    price: "",
+    originalPrice: "",
+    category: "",
+    demoUrl: "",
+    documentationUrl: "",
+    features: [""],
+    tags: "",
+    status: "ACTIVE"
   });
+
+  // Fetch product data
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/agents/${productId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch product");
+        }
+        const product = await response.json();
+        setFormData({
+          name: product.name || "",
+          description: product.description || "",
+          shortDescription: product.shortDescription || "",
+          price: product.price?.toString() || "",
+          originalPrice: product.originalPrice?.toString() || "",
+          category: product.category || "",
+          demoUrl: product.demoUrl || "",
+          documentationUrl: product.documentationUrl || "",
+          features: product.features && product.features.length > 0 ? product.features : [""],
+          tags: product.tags || "",
+          status: product.status || "ACTIVE"
+        });
+        setError(null);
+      } catch (err: any) {
+        console.error("Error fetching product:", err);
+        setError(err.message || "Failed to load product");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
 
   const categories = [
     { value: "writing", label: "WRITING AI" },
@@ -41,22 +75,105 @@ export default function EditProductPage() {
     { value: "design", label: "DESIGN AI" }
   ];
 
+  const handleAddFeature = () => {
+    setFormData({ ...formData, features: [...formData.features, ""] });
+  };
+
+  const handleFeatureChange = (index: number, value: string) => {
+    const newFeatures = [...formData.features];
+    newFeatures[index] = value;
+    setFormData({ ...formData, features: newFeatures });
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    const newFeatures = formData.features.filter((_, i) => i !== index);
+    setFormData({ ...formData, features: newFeatures });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    // In real app, this would update via API
-    setTimeout(() => {
-      setSaving(false);
-      router.push("/vendor/products");
-    }, 2000);
-  };
+    
+    try {
+      const response = await fetch(`/api/agents/${productId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          shortDescription: formData.shortDescription,
+          price: formData.price,
+          originalPrice: formData.originalPrice || null,
+          category: formData.category || null,
+          tags: formData.tags || null,
+          features: formData.features.filter((f) => f.trim()),
+          demoUrl: formData.demoUrl || null,
+          documentationUrl: formData.documentationUrl || null,
+          status: formData.status,
+        }),
+      });
 
-  const handleDelete = () => {
-    if (confirm("ARE YOU SURE YOU WANT TO DELETE THIS AI AGENT?")) {
-      // In real app, this would delete via API
-      router.push("/vendor/products");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update agent");
+      }
+
+      router.push("/vendor");
+    } catch (error: any) {
+      console.error("Error updating agent:", error);
+      alert(`Error: ${error.message || "Failed to update agent"}`);
+    } finally {
+      setSaving(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!confirm("ARE YOU SURE YOU WANT TO DELETE THIS AI AGENT?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/agents/${productId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete agent");
+      }
+
+      router.push("/vendor");
+    } catch (error: any) {
+      console.error("Error deleting agent:", error);
+      alert(`Error: ${error.message || "Failed to delete agent"}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4">LOADING PRODUCT...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4 text-red-500">ERROR</p>
+          <p className="neo-text text-xl mb-4">{error}</p>
+          <Link href="/vendor">
+            <Button>BACK TO DASHBOARD</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -180,6 +297,65 @@ export default function EditProductPage() {
                   value={formData.documentationUrl}
                   onChange={(e) => setFormData({ ...formData, documentationUrl: e.target.value })}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Features */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="neo-heading text-2xl">KEY FEATURES</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.features.map((feature, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={feature}
+                    onChange={(e) => handleFeatureChange(index, e.target.value)}
+                    placeholder={`FEATURE ${index + 1}`}
+                    className="flex-1"
+                  />
+                  {formData.features.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleRemoveFeature(index)}
+                    >
+                      REMOVE
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={handleAddFeature}>
+                ADD FEATURE
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Tags & Status */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="neo-heading text-2xl">ADDITIONAL INFO</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="neo-text text-sm mb-2 block">TAGS (COMMA SEPARATED)</label>
+                <Input
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  placeholder="AI, COPYWRITING, MARKETING"
+                />
+              </div>
+              <div>
+                <label className="neo-text text-sm mb-2 block">STATUS</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="neo-input w-full"
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
               </div>
             </CardContent>
           </Card>
