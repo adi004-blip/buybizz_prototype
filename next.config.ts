@@ -9,14 +9,6 @@ const nextConfig: NextConfig = {
       "./node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
     ],
   },
-  // Ensure server components can access Prisma
-  experimental: {
-    outputFileTracingExcludes: {
-      "*": [
-        "node_modules/@swc/core-*/**/*",
-      ],
-    },
-  },
 };
 
 export default nextConfig;
