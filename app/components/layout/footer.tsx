@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Instagram, Twitter, Facebook, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 export default function Footer() {
   return (
@@ -17,92 +18,83 @@ export default function Footer() {
               </div>
               <span className="neo-heading text-2xl text-white">BUYBIZZ</span>
             </div>
-            <p className="neo-text text-gray-300">
+            <p className="neo-text text-gray-300 text-sm">
               THE ULTIMATE MARKETPLACE FOR AI AGENTS. LIFETIME DEALS, FOREVER ACCESS.
             </p>
-            <div className="flex gap-3">
-              <Button variant="outline" size="sm" className="bg-pink-400 text-black border-white">
-                <Instagram className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" className="bg-cyan-400 text-black border-white">
-                <Twitter className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" className="bg-green-400 text-black border-white">
-                <Facebook className="w-4 h-4" />
-              </Button>
-            </div>
           </div>
 
           {/* Shop */}
           <div className="space-y-4">
-            <h3 className="neo-heading text-xl text-yellow-400">AI AGENTS</h3>
+            <h3 className="neo-heading text-xl text-yellow-400">SHOP</h3>
             <div className="space-y-2">
-              <Link href="/shop" className="block neo-text text-white hover:text-pink-400 transition-colors">
-                ALL AGENTS
+              <Link href="/shop" className="block neo-text text-gray-300 hover:text-yellow-400 transition-colors text-sm">
+                BROWSE AI AGENTS
               </Link>
-              <Link href="/shop/writing" className="block neo-text text-white hover:text-pink-400 transition-colors">
-                WRITING AI
+              <Link href="/vendors" className="block neo-text text-gray-300 hover:text-yellow-400 transition-colors text-sm">
+                ALL CREATORS
               </Link>
-              <Link href="/shop/coding" className="block neo-text text-white hover:text-pink-400 transition-colors">
-                CODE ASSISTANTS
-              </Link>
-              <Link href="/shop/marketing" className="block neo-text text-white hover:text-pink-400 transition-colors">
-                MARKETING AI
-              </Link>
-              <Link href="/shop/analytics" className="block neo-text text-white hover:text-pink-400 transition-colors">
-                ANALYTICS AI
+              <Link href="/about" className="block neo-text text-gray-300 hover:text-yellow-400 transition-colors text-sm">
+                ABOUT US
               </Link>
             </div>
           </div>
 
-          {/* Vendors */}
+          {/* Creators */}
           <div className="space-y-4">
             <h3 className="neo-heading text-xl text-cyan-400">CREATORS</h3>
             <div className="space-y-2">
-              <Link href="/vendor" className="block neo-text text-white hover:text-cyan-400 transition-colors">
-                CREATOR DASHBOARD
+              <Link href="/vendor/register" className="block neo-text text-gray-300 hover:text-cyan-400 transition-colors text-sm">
+                BECOME A CREATOR
               </Link>
-              <Link href="/vendor/register" className="block neo-text text-white hover:text-cyan-400 transition-colors">
-                SELL YOUR AI AGENT
-              </Link>
-              <Link href="/vendor/guide" className="block neo-text text-white hover:text-cyan-400 transition-colors">
-                CREATOR GUIDE
-              </Link>
-              <Link href="/vendor/support" className="block neo-text text-white hover:text-cyan-400 transition-colors">
-                CREATOR SUPPORT
+              <SignedIn>
+                <Link href="/vendor" className="block neo-text text-gray-300 hover:text-cyan-400 transition-colors text-sm">
+                  CREATOR DASHBOARD
+                </Link>
+              </SignedIn>
+              <Link href="/vendors" className="block neo-text text-gray-300 hover:text-cyan-400 transition-colors text-sm">
+                BROWSE CREATORS
               </Link>
             </div>
           </div>
 
-          {/* Support */}
+          {/* Account & Support */}
           <div className="space-y-4">
-            <h3 className="neo-heading text-xl text-green-400">SUPPORT</h3>
-            <div className="space-y-2">
-              <Link href="/help" className="block neo-text text-white hover:text-green-400 transition-colors">
-                HELP CENTER
-              </Link>
-              <Link href="/contact" className="block neo-text text-white hover:text-green-400 transition-colors">
-                CONTACT US
-              </Link>
-              <Link href="/shipping" className="block neo-text text-white hover:text-green-400 transition-colors">
-                SHIPPING INFO
-              </Link>
-              <Link href="/returns" className="block neo-text text-white hover:text-green-400 transition-colors">
-                RETURNS
-              </Link>
-              <Link href="/privacy" className="block neo-text text-white hover:text-green-400 transition-colors">
-                PRIVACY POLICY
-              </Link>
-            </div>
+            <h3 className="neo-heading text-xl text-green-400">ACCOUNT</h3>
+            <SignedIn>
+              <div className="space-y-2">
+                <Link href="/account/purchases" className="block neo-text text-gray-300 hover:text-green-400 transition-colors text-sm">
+                  MY PURCHASES
+                </Link>
+                <Link href="/account/downloads" className="block neo-text text-gray-300 hover:text-green-400 transition-colors text-sm">
+                  MY DOWNLOADS
+                </Link>
+                <Link href="/account/settings" className="block neo-text text-gray-300 hover:text-green-400 transition-colors text-sm">
+                  ACCOUNT SETTINGS
+                </Link>
+                <Link href="/cart" className="block neo-text text-gray-300 hover:text-green-400 transition-colors text-sm">
+                  SHOPPING CART
+                </Link>
+              </div>
+            </SignedIn>
+            <SignedOut>
+              <div className="space-y-2">
+                <Link href="/sign-in" className="block neo-text text-gray-300 hover:text-green-400 transition-colors text-sm">
+                  SIGN IN
+                </Link>
+                <Link href="/sign-up" className="block neo-text text-gray-300 hover:text-green-400 transition-colors text-sm">
+                  CREATE ACCOUNT
+                </Link>
+              </div>
+            </SignedOut>
           </div>
         </div>
 
         {/* Newsletter */}
-        <div className="mt-12 pt-8 border-t-4 border-white">
+        <div className="mt-12 pt-8 border-t-2 border-white">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h3 className="neo-heading text-2xl text-white mb-2">STAY UPDATED!</h3>
-              <p className="neo-text text-gray-300">GET THE LATEST DEALS AND PRODUCT DROPS</p>
+              <p className="neo-text text-gray-300 text-sm">GET THE LATEST AI AGENT DEALS</p>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <input
@@ -110,7 +102,7 @@ export default function Footer() {
                 placeholder="YOUR EMAIL..."
                 className="neo-input flex-1 md:w-80 bg-white text-black placeholder:text-gray-600"
               />
-              <Button variant="primary">
+              <Button variant="primary" className="bg-yellow-400 text-black">
                 <Mail className="w-5 h-5 mr-2" />
                 SUBSCRIBE
               </Button>
@@ -119,13 +111,25 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="mt-8 pt-8 border-t-4 border-white text-center">
-          <p className="neo-text text-gray-300">
-            © 2024 BUYBIZZ. ALL RIGHTS RESERVED. BUILT WITH BRUTAL LOVE.
-          </p>
+        <div className="mt-8 pt-8 border-t-2 border-white">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="neo-text text-gray-300 text-sm text-center md:text-left">
+              © 2024 BUYBIZZ. ALL RIGHTS RESERVED.
+            </p>
+            <div className="flex gap-6 text-sm">
+              <Link href="/about" className="neo-text text-gray-300 hover:text-yellow-400 transition-colors">
+                ABOUT
+              </Link>
+              <Link href="/terms" className="neo-text text-gray-300 hover:text-yellow-400 transition-colors">
+                TERMS
+              </Link>
+              <Link href="/privacy" className="neo-text text-gray-300 hover:text-yellow-400 transition-colors">
+                PRIVACY
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
   );
 }
-
