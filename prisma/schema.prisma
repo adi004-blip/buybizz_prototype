@@ -42,6 +42,7 @@ model User {
   orders     Order[]
   userAgents UserAgent[]
   sessions   Session[]
+  cartItems  CartItem[]
 
   @@map("users")
 }
@@ -68,6 +69,7 @@ model Agent {
   vendor     User        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
   userAgents UserAgent[]
+  cartItems  CartItem[]
 
   @@index([vendorId])
   @@index([status])
@@ -140,4 +142,22 @@ model Session {
 
   @@index([sessionToken])
   @@map("sessions")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  agentId   String   @map("agent_id")
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agentId])
+  @@index([userId])
+  @@index([agentId])
+  @@map("cart_items")
 }
