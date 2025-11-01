@@ -56,14 +56,16 @@ export default function VendorRegisterPage() {
     setError(null);
 
     try {
-      // For MVP, auto-approve and promote to vendor
-      // In production, this would create an application for admin approval
-      const response = await fetch(`/api/admin/users/${user.id}/role`, {
-        method: "PATCH",
+      // Use vendor registration API (self-registration)
+      const response = await fetch("/api/vendor/register", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ role: "VENDOR" }),
+        body: JSON.stringify({
+          companyName: formData.companyName,
+          reason: formData.reason,
+        }),
       });
 
       if (!response.ok) {
