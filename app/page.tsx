@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Zap, Shield, Star, Loader2 } from "lucide-react";
@@ -30,10 +31,38 @@ interface Creator {
 }
 
 export default function HomePage() {
+  const { user, isLoaded: userLoaded } = useUser();
   const [featuredProducts, setFeaturedProducts] = useState<Agent[]>([]);
   const [topCreators, setTopCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+
+  // Fetch user role if authenticated
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!userLoaded) return;
+      
+      if (user) {
+        try {
+          const response = await fetch("/api/user/role");
+          if (response.ok) {
+            const data = await response.json();
+            setUserRole(data.role);
+          }
+        } catch (err) {
+          console.error("Error fetching user role:", err);
+        } finally {
+          setRoleLoading(false);
+        }
+      } else {
+        setRoleLoading(false);
+      }
+    };
+
+    fetchUserRole();
+  }, [user, userLoaded]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,6 +99,10 @@ export default function HomePage() {
 
   const colors = ["bg-yellow-400", "bg-pink-400", "bg-cyan-400", "bg-green-400"];
 
+  // Determine if user should see vendor buttons
+  const isVendorOrAdmin = userRole === "VENDOR" || userRole === "ADMIN";
+  const showVendorButton = !isVendorOrAdmin && !roleLoading;
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -91,11 +124,13 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 w-6 h-6" />
               </Button>
             </Link>
-            <Link href="/vendor/register">
-              <Button variant="outline" size="lg" className="bg-white text-black border-black neo-shadow-xl">
-                SELL YOUR AI AGENT
-              </Button>
-            </Link>
+            {showVendorButton && (
+              <Link href={user ? "/vendor/register" : "/sign-in?redirect=/vendor/register"}>
+                <Button variant="outline" size="lg" className="bg-white text-black border-black neo-shadow-xl">
+                  {user ? "BECOME A VENDOR" : "APPLY TO BECOME A VENDOR"}
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -259,23 +294,25 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-black text-white">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="neo-heading text-4xl md:text-6xl mb-6 text-white">
-            HAVE AN <span className="text-yellow-400">AI AGENT</span> TO SELL?
-          </h2>
-          <p className="neo-text text-xl mb-8 text-gray-300">
-            JOIN THOUSANDS OF CREATORS SELLING LIFETIME DEALS ON BUYBIZZ
-          </p>
-          <Link href="/vendor/register">
-            <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
-              LIST YOUR AI AGENT
-              <ArrowRight className="ml-2 w-6 h-6" />
-            </Button>
-          </Link>
-        </div>
-      </section>
+      {/* CTA Section - Only show if user is not vendor/admin */}
+      {showVendorButton && (
+        <section className="py-20 px-4 bg-black text-white">
+          <div className="mx-auto max-w-4xl text-center">
+            <h2 className="neo-heading text-4xl md:text-6xl mb-6 text-white">
+              HAVE AN <span className="text-yellow-400">AI AGENT</span> TO SELL?
+            </h2>
+            <p className="neo-text text-xl mb-8 text-gray-300">
+              JOIN THOUSANDS OF CREATORS SELLING LIFETIME DEALS ON BUYBIZZ
+            </p>
+            <Link href={user ? "/vendor/register" : "/sign-in?redirect=/vendor/register"}>
+              <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
+                {user ? "LIST YOUR AI AGENT" : "APPLY TO BECOME A VENDOR"}
+                <ArrowRight className="ml-2 w-6 h-6" />
+              </Button>
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

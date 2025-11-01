@@ -1,11 +1,44 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 export default function Footer() {
+  const { user, isLoaded: userLoaded } = useUser();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+
+  // Fetch user role if authenticated
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!userLoaded) return;
+      
+      if (user) {
+        try {
+          const response = await fetch("/api/user/role");
+          if (response.ok) {
+            const data = await response.json();
+            setUserRole(data.role);
+          }
+        } catch (err) {
+          console.error("Error fetching user role:", err);
+        } finally {
+          setRoleLoading(false);
+        }
+      } else {
+        setRoleLoading(false);
+      }
+    };
+
+    fetchUserRole();
+  }, [user, userLoaded]);
+
+  const isVendorOrAdmin = userRole === "VENDOR" || userRole === "ADMIN";
+  const showVendorButton = !isVendorOrAdmin && !roleLoading;
   return (
     <footer className="w-full neo-border-thick bg-black text-white mt-20">
       <div className="mx-auto max-w-7xl px-4 py-12">
@@ -43,14 +76,16 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="neo-heading text-xl text-cyan-400">CREATORS</h3>
             <div className="space-y-2">
-              <Link href="/vendor/register" className="block neo-text text-gray-300 hover:text-cyan-400 transition-colors text-sm">
-                BECOME A CREATOR
-              </Link>
-              <SignedIn>
+              {showVendorButton && (
+                <Link href={user ? "/vendor/register" : "/sign-in?redirect=/vendor/register"} className="block neo-text text-gray-300 hover:text-cyan-400 transition-colors text-sm">
+                  BECOME A CREATOR
+                </Link>
+              )}
+              {isVendorOrAdmin && (
                 <Link href="/vendor" className="block neo-text text-gray-300 hover:text-cyan-400 transition-colors text-sm">
                   CREATOR DASHBOARD
                 </Link>
-              </SignedIn>
+              )}
               <Link href="/vendors" className="block neo-text text-gray-300 hover:text-cyan-400 transition-colors text-sm">
                 BROWSE CREATORS
               </Link>

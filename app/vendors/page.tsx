@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +21,38 @@ interface Creator {
 }
 
 export default function VendorsPage() {
+  const { user, isLoaded: userLoaded } = useUser();
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+
+  // Fetch user role if authenticated
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!userLoaded) return;
+      
+      if (user) {
+        try {
+          const response = await fetch("/api/user/role");
+          if (response.ok) {
+            const data = await response.json();
+            setUserRole(data.role);
+          }
+        } catch (err) {
+          console.error("Error fetching user role:", err);
+        } finally {
+          setRoleLoading(false);
+        }
+      } else {
+        setRoleLoading(false);
+      }
+    };
+
+    fetchUserRole();
+  }, [user, userLoaded]);
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -59,6 +88,9 @@ export default function VendorsPage() {
   ];
 
   const getColor = (index: number) => colors[index % colors.length];
+
+  const isVendorOrAdmin = userRole === "VENDOR" || userRole === "ADMIN";
+  const showVendorButton = !isVendorOrAdmin && !roleLoading;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -166,23 +198,25 @@ export default function VendorsPage() {
           </>
         )}
 
-        {/* Become a Vendor CTA */}
-        <Card className="mt-12 bg-black text-white">
-          <CardContent className="p-12 text-center">
-            <h2 className="neo-heading text-4xl mb-4">
-              WANT TO BECOME A <span className="text-yellow-400">CREATOR?</span>
-            </h2>
-            <p className="neo-text text-xl mb-8 text-gray-300">
-              JOIN OUR MARKETPLACE AND START SELLING YOUR AI AGENTS TODAY
-            </p>
-            <Link href="/vendor/register" className="inline-block">
-              <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
-                APPLY NOW
-                <ArrowRight className="ml-2 w-6 h-6" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        {/* Become a Vendor CTA - Only show if user is not vendor/admin */}
+        {showVendorButton && (
+          <Card className="mt-12 bg-black text-white">
+            <CardContent className="p-12 text-center">
+              <h2 className="neo-heading text-4xl mb-4">
+                WANT TO BECOME A <span className="text-yellow-400">CREATOR?</span>
+              </h2>
+              <p className="neo-text text-xl mb-8 text-gray-300">
+                JOIN OUR MARKETPLACE AND START SELLING YOUR AI AGENTS TODAY
+              </p>
+              <Link href={user ? "/vendor/register" : "/sign-in?redirect=/vendor/register"} className="inline-block">
+                <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
+                  {user ? "APPLY NOW" : "SIGN IN TO APPLY"}
+                  <ArrowRight className="ml-2 w-6 h-6" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

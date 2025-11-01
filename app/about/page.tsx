@@ -1,11 +1,44 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Zap, Shield, Users, Heart } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 
 export default function AboutPage() {
+  const { user, isLoaded: userLoaded } = useUser();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+
+  // Fetch user role if authenticated
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!userLoaded) return;
+      
+      if (user) {
+        try {
+          const response = await fetch("/api/user/role");
+          if (response.ok) {
+            const data = await response.json();
+            setUserRole(data.role);
+          }
+        } catch (err) {
+          console.error("Error fetching user role:", err);
+        } finally {
+          setRoleLoading(false);
+        }
+      } else {
+        setRoleLoading(false);
+      }
+    };
+
+    fetchUserRole();
+  }, [user, userLoaded]);
+
+  const isVendorOrAdmin = userRole === "VENDOR" || userRole === "ADMIN";
+  const showVendorButton = !isVendorOrAdmin && !roleLoading;
   return (
     <div className="min-h-screen bg-white py-8 px-4">
       <div className="mx-auto max-w-4xl">
@@ -83,11 +116,13 @@ export default function AboutPage() {
               START SELLING OR SHOPPING TODAY
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/vendor/register">
-                <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
-                  BECOME A VENDOR
-                </Button>
-              </Link>
+              {showVendorButton && (
+                <Link href={user ? "/vendor/register" : "/sign-in?redirect=/vendor/register"}>
+                  <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
+                    {user ? "BECOME A VENDOR" : "APPLY TO BECOME A VENDOR"}
+                  </Button>
+                </Link>
+              )}
               <Link href="/shop">
                 <Button size="lg" variant="outline" className="bg-white text-black border-white neo-shadow-xl">
                   START SHOPPING
