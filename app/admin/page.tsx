@@ -68,7 +68,11 @@ interface VendorApplication {
   companyName: string | null;
   description: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 interface User {
