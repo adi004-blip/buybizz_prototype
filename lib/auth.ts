@@ -8,7 +8,10 @@ export async function getCurrentUser() {
   try {
     const { userId } = await auth();
     
+    console.log("[getCurrentUser] Clerk userId:", userId);
+    
     if (!userId) {
+      console.log("[getCurrentUser] No userId from Clerk");
       return null;
     }
 
@@ -17,8 +20,16 @@ export async function getCurrentUser() {
       where: { id: userId },
     });
 
+    console.log("[getCurrentUser] Database query result:", {
+      userExists: !!user,
+      userId: user?.id,
+      userRole: user?.role,
+      roleType: typeof user?.role,
+    });
+
     // If user doesn't exist in DB, create it (this should be handled by webhook, but fallback)
     if (!user) {
+      console.log("[getCurrentUser] User not found in DB, attempting to create");
       try {
         const clerkUser = await currentUser();
         if (clerkUser) {
@@ -32,15 +43,30 @@ export async function getCurrentUser() {
               role: "CUSTOMER",
             },
           });
+          console.log("[getCurrentUser] User created:", {
+            id: user.id,
+            role: user.role,
+          });
+        } else {
+          console.log("[getCurrentUser] Could not get Clerk user data");
         }
       } catch (createError: any) {
         // If user creation fails, log but don't throw - might be a race condition
-        console.error("[getCurrentUser] Error creating user:", createError);
+        console.error("[getCurrentUser] Error creating user:", {
+          message: createError.message,
+          code: createError.code,
+          meta: createError.meta,
+        });
         // Return null if we can't create the user
         return null;
       }
     }
 
+    console.log("[getCurrentUser] Returning user:", {
+      id: user?.id,
+      role: user?.role,
+      roleType: typeof user?.role,
+    });
     return user;
   } catch (error: any) {
     // Log error but don't throw - return null instead
@@ -48,6 +74,7 @@ export async function getCurrentUser() {
       message: error.message,
       code: error.code,
       meta: error.meta,
+      stack: error.stack,
     });
     return null;
   }
