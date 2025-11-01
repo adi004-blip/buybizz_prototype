@@ -391,13 +391,13 @@ export default function AdminDashboard() {
               <Card className="bg-red-500 text-white">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <Store className="w-12 h-12" />
-                    <TrendingUp className="w-6 h-6" />
+                    <Store className="w-12 h-12 text-white" />
+                    <TrendingUp className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="neo-heading text-3xl mb-1">
-                    {stats?.users?.vendors !== undefined ? stats.users.vendors.toLocaleString() : "0"}
+                  <h3 className="neo-heading text-3xl mb-1 text-white">
+                    {(stats?.users?.vendors ?? 0).toLocaleString()}
                   </h3>
-                  <p className="neo-text">TOTAL VENDORS</p>
+                  <p className="neo-text text-white">TOTAL VENDORS</p>
                 </CardContent>
               </Card>
 
