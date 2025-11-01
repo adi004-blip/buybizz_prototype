@@ -126,7 +126,10 @@ model UserAgent {
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, agentId])
+  // Note: Removed @@unique([userId, agentId]) to allow multiple purchases of same agent
+  // Users can have multiple API keys for the same agent (e.g., quantity > 1)
+  @@index([userId])
+  @@index([userId, agentId])
   @@map("user_agents")
 }
 
