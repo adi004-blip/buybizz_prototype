@@ -38,7 +38,11 @@ export default function VendorDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders" | "analytics">("overview");
   const [products, setProducts] = useState<Agent[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch vendor's products
@@ -66,18 +70,62 @@ export default function VendorDashboard() {
     fetchProducts();
   }, [user?.id]);
 
+  // Fetch vendor's orders
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user?.id || activeTab !== "orders" && activeTab !== "overview") return;
+      
+      try {
+        setOrdersLoading(true);
+        const response = await fetch("/api/vendor/orders");
+        if (!response.ok) {
+          throw new Error("Failed to fetch orders");
+        }
+        const data = await response.json();
+        setOrders(data.orders || []);
+      } catch (err: any) {
+        console.error("Error fetching orders:", err);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [user?.id, activeTab]);
+
+  // Fetch vendor's stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.id || activeTab !== "analytics" && activeTab !== "overview") return;
+      
+      try {
+        setStatsLoading(true);
+        const response = await fetch("/api/vendor/stats");
+        if (!response.ok) {
+          throw new Error("Failed to fetch stats");
+        }
+        const data = await response.json();
+        setStats(data);
+      } catch (err: any) {
+        console.error("Error fetching stats:", err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [user?.id, activeTab]);
+
   // Calculate stats from real data
-  const stats = {
+  const dashboardStats = {
     totalProducts: products.length,
-    totalSales: 0, // Will be calculated from orders later
-    totalRevenue: 0, // Will be calculated from orders later
-    totalCustomers: 0, // Will be calculated from orders later
-    monthlyGrowth: 0 // Will be calculated later
+    totalSales: stats?.totalSales || 0,
+    totalRevenue: stats?.totalRevenue || "0.00",
+    monthlyGrowth: stats?.monthlyGrowth || 0,
   };
 
   const recentProducts = products.slice(0, 4);
-
-  const recentOrders: any[] = []; // Will be populated from orders API later
+  const recentOrders = orders.slice(0, 5);
   
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm("ARE YOU SURE YOU WANT TO DELETE THIS AI AGENT?")) {
@@ -298,7 +346,11 @@ export default function VendorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {recentOrders.length === 0 ? (
+                {ordersLoading ? (
+                  <div className="text-center py-8">
+                    <p className="neo-text">LOADING ORDERS...</p>
+                  </div>
+                ) : recentOrders.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="neo-text text-gray-600">NO ORDERS YET</p>
                   </div>
@@ -311,25 +363,27 @@ export default function VendorDashboard() {
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-4 mb-2">
-                            <h4 className="neo-heading text-lg">{order.id}</h4>
+                            <h4 className="neo-heading text-lg">Order #{order.id.slice(0, 8)}</h4>
                             <span className={`neo-text px-3 py-1 neo-border neo-shadow-sm ${
-                              order.status === "completed" ? "bg-green-400" :
-                              order.status === "shipped" ? "bg-cyan-400" :
-                              "bg-yellow-400"
+                              order.status === "COMPLETED" ? "bg-green-400" :
+                              order.status === "PENDING" ? "bg-yellow-400" :
+                              "bg-red-400"
                             }`}>
-                              {order.status.toUpperCase()}
+                              {order.status}
                             </span>
                           </div>
                           <div className="flex gap-4">
-                            <span className="neo-text text-gray-600">Customer: {order.customer}</span>
-                            <span className="neo-text text-gray-600">Product: {order.product}</span>
-                            <span className="neo-text text-gray-600">Amount: ${order.amount}</span>
-                            <span className="neo-text text-gray-600">Date: {order.date}</span>
+                            <span className="neo-text text-gray-600">
+                              {order.customer.name || order.customer.email}
+                            </span>
+                            <span className="neo-text text-gray-600">
+                              ${order.vendorRevenue}
+                            </span>
+                            <span className="neo-text text-gray-600">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">
-                          VIEW DETAILS
-                        </Button>
                       </div>
                     ))}
                   </div>
@@ -415,41 +469,71 @@ export default function VendorDashboard() {
         {/* Orders Tab */}
         {activeTab === "orders" && (
           <div className="space-y-6">
-            <h2 className="neo-heading text-3xl">ORDERS</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="neo-heading text-3xl">ORDERS</h2>
+              {stats && (
+                <div className="flex gap-4">
+                  <div className="neo-border px-4 py-2 bg-white">
+                    <p className="neo-text text-xs text-gray-600">TOTAL REVENUE</p>
+                    <p className="neo-heading text-xl">${stats.totalRevenue || "0.00"}</p>
+                  </div>
+                </div>
+              )}
+            </div>
             <Card>
               <CardContent className="p-6">
-                <div className="space-y-4">
-                  {recentOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="neo-border p-6 bg-white"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="neo-heading text-xl mb-2">{order.id}</h3>
-                          <p className="neo-text text-gray-600">Customer: {order.customer}</p>
-                          <p className="neo-text text-gray-600">Product: {order.product}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="neo-heading text-2xl mb-2">${order.amount}</p>
-                          <span className={`neo-text px-3 py-1 neo-border neo-shadow-sm ${
-                            order.status === "completed" ? "bg-green-400" :
-                            order.status === "shipped" ? "bg-cyan-400" :
-                            "bg-yellow-400"
-                          }`}>
-                            {order.status.toUpperCase()}
-                          </span>
+                {ordersLoading ? (
+                  <div className="text-center py-12">
+                    <p className="neo-heading text-2xl">LOADING ORDERS...</p>
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="neo-heading text-2xl mb-4">NO ORDERS YET</p>
+                    <p className="neo-text text-gray-600">ORDERS WILL APPEAR HERE WHEN CUSTOMERS PURCHASE YOUR AI AGENTS</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="neo-border p-6 bg-white"
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-4 mb-2">
+                              <h3 className="neo-heading text-xl">Order #{order.id.slice(0, 8)}</h3>
+                              <span className={`neo-text px-3 py-1 neo-border neo-shadow-sm ${
+                                order.status === "COMPLETED" ? "bg-green-400" :
+                                order.status === "PENDING" ? "bg-yellow-400" :
+                                "bg-red-400"
+                              }`}>
+                                {order.status}
+                              </span>
+                            </div>
+                            <p className="neo-text text-gray-600 mb-1">Customer: {order.customer.name || order.customer.email}</p>
+                            <p className="neo-text text-gray-600 mb-1">
+                              {order.items.length} {order.items.length === 1 ? "item" : "items"}
+                            </p>
+                            <div className="mt-2 space-y-1">
+                              {order.items.map((item: any) => (
+                                <p key={item.id} className="neo-text text-sm text-gray-600">
+                                  • {item.agentName} x{item.quantity} - ${item.price}
+                                </p>
+                              ))}
+                            </div>
+                            <p className="neo-text text-xs text-gray-500 mt-2">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right ml-4">
+                            <p className="neo-heading text-2xl mb-2">${order.vendorRevenue}</p>
+                            <p className="neo-text text-xs text-gray-600">Your Revenue</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" className="flex-1">VIEW DETAILS</Button>
-                        {order.status === "pending" && (
-                          <Button variant="primary">PROCESS ORDER</Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -459,35 +543,94 @@ export default function VendorDashboard() {
         {activeTab === "analytics" && (
           <div className="space-y-6">
             <h2 className="neo-heading text-3xl">ANALYTICS</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-yellow-400">
-                <CardContent className="p-8">
-                  <h3 className="neo-heading text-2xl mb-4">MONTHLY GROWTH</h3>
-                  <p className="neo-heading text-5xl mb-2">+{stats.monthlyGrowth}%</p>
-                  <p className="neo-text">UP FROM LAST MONTH</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-pink-400">
-                <CardContent className="p-8">
-                  <h3 className="neo-heading text-2xl mb-4">AVERAGE RATING</h3>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Star className="w-8 h-8 fill-black text-black" />
-                    <p className="neo-heading text-5xl">4.8</p>
-                  </div>
-                  <p className="neo-text">BASED ON 342 REVIEWS</p>
-                </CardContent>
-              </Card>
-            </div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="neo-heading text-2xl">SALES OVERVIEW</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 bg-gray-200 flex items-center justify-center neo-border">
-                  <p className="neo-text text-gray-500">SALES CHART PLACEHOLDER</p>
+            {statsLoading ? (
+              <div className="text-center py-12">
+                <p className="neo-heading text-2xl">LOADING ANALYTICS...</p>
+              </div>
+            ) : stats ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card className="bg-yellow-400">
+                    <CardContent className="p-6">
+                      <h3 className="neo-heading text-xl mb-2">TOTAL SALES</h3>
+                      <p className="neo-heading text-4xl mb-1">{stats.totalSales || 0}</p>
+                      <p className="neo-text text-sm">Units Sold</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-pink-400">
+                    <CardContent className="p-6">
+                      <h3 className="neo-heading text-xl mb-2">TOTAL REVENUE</h3>
+                      <p className="neo-heading text-4xl mb-1">${stats.totalRevenue || "0.00"}</p>
+                      <p className="neo-text text-sm">All Time</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-cyan-400">
+                    <CardContent className="p-6">
+                      <h3 className="neo-heading text-xl mb-2">MONTHLY REVENUE</h3>
+                      <p className="neo-heading text-4xl mb-1">${stats.monthlyRevenue || "0.00"}</p>
+                      <p className="neo-text text-sm">This Month</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-green-400">
+                    <CardContent className="p-6">
+                      <h3 className="neo-heading text-xl mb-2">MONTHLY GROWTH</h3>
+                      <p className="neo-heading text-4xl mb-1">
+                        {stats.monthlyGrowth >= 0 ? "+" : ""}{stats.monthlyGrowth || 0}%
+                      </p>
+                      <p className="neo-text text-sm">vs Last Month</p>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="neo-heading text-2xl">TOP SELLING PRODUCTS</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {stats.topProducts && stats.topProducts.length > 0 ? (
+                        <div className="space-y-4">
+                          {stats.topProducts.map((product: any, index: number) => (
+                            <div key={index} className="neo-border p-4 bg-white flex items-center justify-between">
+                              <div>
+                                <p className="neo-heading text-lg">{product.name}</p>
+                                <p className="neo-text text-sm text-gray-600">{product.sales} sales</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="neo-heading text-xl">${product.revenue}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="neo-text text-gray-600 text-center py-8">NO SALES YET</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="neo-heading text-2xl">PERFORMANCE METRICS</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="neo-border p-4 bg-white">
+                        <p className="neo-text text-sm text-gray-600 mb-1">AVERAGE ORDER VALUE</p>
+                        <p className="neo-heading text-2xl">${stats.averageOrderValue || "0.00"}</p>
+                      </div>
+                      <div className="neo-border p-4 bg-white">
+                        <p className="neo-text text-sm text-gray-600 mb-1">TOTAL PRODUCTS</p>
+                        <p className="neo-heading text-2xl">{stats.totalAgents || 0}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <p className="neo-heading text-2xl mb-4">NO ANALYTICS DATA</p>
+                <p className="neo-text text-gray-600">ANALYTICS WILL APPEAR HERE ONCE YOU START RECEIVING ORDERS</p>
+              </div>
+            )}
           </div>
         )}
       </div>
