@@ -2,41 +2,46 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { 
   Package, 
   Download, 
-  Settings, 
   Store,
+  Shield,
   ChevronDown,
+  LogOut,
+  User,
 } from "lucide-react";
 
 export default function UserMenu() {
   const { user } = useUser();
+  const { signOut } = useClerk();
   const [isOpen, setIsOpen] = useState(false);
   const [isVendor, setIsVendor] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Check if user is vendor
+  // Check if user is vendor/admin
   useEffect(() => {
-    const checkVendorStatus = async () => {
+    const checkRole = async () => {
       try {
         const response = await fetch("/api/user/role");
         if (response.ok) {
           const data = await response.json();
           setIsVendor(data.role === "VENDOR" || data.role === "ADMIN");
+          setIsAdmin(data.role === "ADMIN");
         }
       } catch (error) {
-        console.error("Error checking vendor status:", error);
+        console.error("Error checking role:", error);
       }
     };
 
     if (user) {
-      checkVendorStatus();
+      checkRole();
     }
   }, [user]);
 
+  // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -53,15 +58,17 @@ export default function UserMenu() {
     };
   }, [isOpen]);
 
-  const menuItems = [
-    { href: "/account/purchases", label: "MY PURCHASES", icon: Package },
-    { href: "/account/downloads", label: "MY DOWNLOADS", icon: Download },
-    { href: "/account/settings", label: "ACCOUNT SETTINGS", icon: Settings },
-  ];
+  const handleSignOut = async () => {
+    setIsOpen(false);
+    await signOut();
+    window.location.href = "/";
+  };
+
+  if (!user) return null;
 
   return (
     <div className="relative" ref={menuRef}>
-      {/* Desktop: Custom dropdown menu */}
+      {/* Desktop: Custom dropdown */}
       <div className="hidden md:block">
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -81,29 +88,32 @@ export default function UserMenu() {
 
         {isOpen && (
           <div className="absolute right-0 top-full mt-2 w-56 bg-white neo-border neo-shadow-lg z-50">
-            <div className="p-2 border-b-2 border-black">
-              <p className="neo-text text-xs text-gray-600 px-2 py-1 truncate">
+            {/* User info */}
+            <div className="p-3 border-b-2 border-black">
+              <p className="neo-text text-xs text-gray-600 truncate">
                 {user?.emailAddresses[0]?.emailAddress || "User"}
               </p>
             </div>
-            <nav className="py-1">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-yellow-400 transition-colors neo-text font-bold text-sm"
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
+
+            {/* Custom links - only show if vendor */}
             {isVendor && (
-              <div className="border-t-2 border-black p-2">
+              <div className="py-1">
+                <Link
+                  href="/account/purchases"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-yellow-400 transition-colors neo-text font-bold text-sm"
+                >
+                  <Package className="w-4 h-4" />
+                  MY PURCHASES
+                </Link>
+                <Link
+                  href="/account/downloads"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-yellow-400 transition-colors neo-text font-bold text-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  MY DOWNLOADS
+                </Link>
                 <Link
                   href="/vendor"
                   onClick={() => setIsOpen(false)}
@@ -114,33 +124,135 @@ export default function UserMenu() {
                 </Link>
               </div>
             )}
-            <div className="border-t-2 border-black p-2">
-              <UserButton 
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    userButtonPopoverCard: "neo-border neo-shadow-lg",
-                    userButtonPopoverActions: "neo-text",
-                  }
-                }}
-              />
+
+            {/* Admin link */}
+            {isAdmin && (
+              <div className="py-1 border-t-2 border-black">
+                <Link
+                  href="/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-red-400 transition-colors neo-text font-bold text-sm"
+                >
+                  <Shield className="w-4 h-4" />
+                  ADMIN DASHBOARD
+                </Link>
+              </div>
+            )}
+
+            {/* Clerk account settings */}
+            <div className="py-1 border-t-2 border-black">
+              <Link
+                href="/account/settings"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 transition-colors neo-text font-bold text-sm"
+              >
+                <User className="w-4 h-4" />
+                ACCOUNT SETTINGS
+              </Link>
+            </div>
+
+            {/* Sign out */}
+            <div className="p-2 border-t-2 border-black">
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-3 px-4 py-2 w-full hover:bg-red-400 transition-colors neo-text font-bold text-sm"
+              >
+                <LogOut className="w-4 h-4" />
+                SIGN OUT
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Mobile: Just show UserButton */}
+      {/* Mobile: Simplified version */}
       <div className="md:hidden">
-        <UserButton 
-          afterSignOutUrl="/"
-          appearance={{
-            elements: {
-              avatarBox: "neo-border neo-shadow-sm"
-            }
-          }}
-        />
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="neo-border neo-shadow-sm w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center"
+        >
+          {user?.imageUrl ? (
+            <img src={user.imageUrl} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white text-xs font-bold">
+              {user?.firstName?.[0] || user?.emailAddresses[0]?.emailAddress?.[0] || "U"}
+            </span>
+          )}
+        </button>
+
+        {isOpen && (
+          <div className="absolute right-0 top-full mt-2 w-56 bg-white neo-border neo-shadow-lg z-50">
+            <div className="p-3 border-b-2 border-black">
+              <p className="neo-text text-xs text-gray-600 truncate">
+                {user?.emailAddresses[0]?.emailAddress || "User"}
+              </p>
+            </div>
+
+            {isVendor && (
+              <div className="py-1">
+                <Link
+                  href="/account/purchases"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-yellow-400 transition-colors neo-text font-bold text-sm"
+                >
+                  <Package className="w-4 h-4" />
+                  MY PURCHASES
+                </Link>
+                <Link
+                  href="/account/downloads"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-yellow-400 transition-colors neo-text font-bold text-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  MY DOWNLOADS
+                </Link>
+                <Link
+                  href="/vendor"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-cyan-400 transition-colors neo-text font-bold text-sm"
+                >
+                  <Store className="w-4 h-4" />
+                  VENDOR DASHBOARD
+                </Link>
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="py-1 border-t-2 border-black">
+                <Link
+                  href="/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-red-400 transition-colors neo-text font-bold text-sm"
+                >
+                  <Shield className="w-4 h-4" />
+                  ADMIN DASHBOARD
+                </Link>
+              </div>
+            )}
+
+            <div className="py-1 border-t-2 border-black">
+              <Link
+                href="/account/settings"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 transition-colors neo-text font-bold text-sm"
+              >
+                <User className="w-4 h-4" />
+                ACCOUNT SETTINGS
+              </Link>
+            </div>
+
+            <div className="p-2 border-t-2 border-black">
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-3 px-4 py-2 w-full hover:bg-red-400 transition-colors neo-text font-bold text-sm"
+              >
+                <LogOut className="w-4 h-4" />
+                SIGN OUT
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

@@ -143,30 +143,6 @@ export default function Navbar() {
             {/* Mobile Auth */}
             <div className="flex flex-col gap-2 pt-2 border-t-2 border-black">
               <SignedIn>
-                {/* Mobile Account Links */}
-                <div className="flex flex-col gap-1 px-2">
-                  <Link 
-                    href="/account/purchases" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="neo-text text-sm py-2 px-3 hover:bg-yellow-400 transition-colors neo-border"
-                  >
-                    MY PURCHASES
-                  </Link>
-                  <Link 
-                    href="/account/downloads" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="neo-text text-sm py-2 px-3 hover:bg-yellow-400 transition-colors neo-border"
-                  >
-                    MY DOWNLOADS
-                  </Link>
-                  <Link 
-                    href="/account/settings" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="neo-text text-sm py-2 px-3 hover:bg-yellow-400 transition-colors neo-border"
-                  >
-                    ACCOUNT SETTINGS
-                  </Link>
-                </div>
                 <div className="flex items-center justify-center pt-2">
                   <UserMenu />
                 </div>
