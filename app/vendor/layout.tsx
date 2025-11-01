@@ -26,12 +26,18 @@ export default async function VendorLayout({
 
     return <>{children}</>;
   } catch (error: any) {
-    // Log error for debugging
+    // Next.js redirect() throws a special error - we need to rethrow it
+    if (error?.digest?.startsWith('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
+      throw error;
+    }
+    
+    // Log other errors for debugging
     console.error("[VendorLayout] Error:", {
       message: error.message,
       stack: error.stack,
+      digest: error.digest,
     });
-    // Redirect to home on any error
+    // Redirect to home on any other error
     redirect("/");
   }
 }
