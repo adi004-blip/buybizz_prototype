@@ -1,44 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Key, Copy, RefreshCw, Download, Shield, AlertCircle } from "lucide-react";
+import { Key, Copy, RefreshCw, Download, Shield, AlertCircle, CheckCircle } from "lucide-react";
+
+interface Agent {
+  id: string;
+  name: string;
+  vendor: string;
+  apiKeys: string[];
+  purchasedAt: string;
+  documentationUrl: string | null;
+}
 
 export default function DownloadsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const agentFilter = searchParams.get("agent");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copiedKeys, setCopiedKeys] = useState<Set<string>>(new Set());
 
-  // Mock data - in real app, fetch from API
-  const agents = [
-    {
-      id: 1,
-      name: "AI COPYWRITER PRO",
-      vendor: "AIWRITER",
-      apiKey: "bb_live_sk_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
-      createdAt: "2024-01-15",
-      lastUsed: "2024-01-20",
-      usage: 1247,
-      downloads: [
-        { name: "API Documentation", url: "#", type: "PDF" },
-        { name: "Quick Start Guide", url: "#", type: "PDF" },
-        { name: "SDK Package", url: "#", type: "ZIP" }
-      ]
-    },
-    {
-      id: 2,
-      name: "CODE ASSISTANT AGENT",
-      vendor: "DEVTECH",
-      apiKey: "bb_live_sk_z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k",
-      createdAt: "2024-01-10",
-      lastUsed: "2024-01-19",
-      usage: 892,
-      downloads: [
-        { name: "API Documentation", url: "#", type: "PDF" },
-        { name: "Code Examples", url: "#", type: "ZIP" }
-      ]
-    }
-  ];
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/user/agents");
+        if (!response.ok) {
+          if (response.status === 401) {
+            router.push("/sign-in");
+            return;
+          }
+          throw new Error("Failed to fetch agents");
+        }
+        const data = await response.json();
+        let agentsData = data.agents || [];
+
+        // Filter by agent if query param provided
+        if (agentFilter) {
+          agentsData = agentsData.filter((a: Agent) => a.id === agentFilter);
+        }
+
+        // Transform to match component format
+        const transformedAgents = agentsData.map((agent: any) => ({
+          id: agent.id,
+          name: agent.name,
+          vendor: agent.vendor.name,
+          apiKeys: agent.apiKeys,
+          purchasedAt: agent.purchasedAt,
+          documentationUrl: agent.documentationUrl,
+        }));
+
+        setAgents(transformedAgents);
+        setError(null);
+      } catch (err: any) {
+        console.error("Error fetching agents:", err);
+        setError(err.message || "Failed to load agents");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgents();
+  }, [router, agentFilter]);
 
   const copyToClipboard = (text: string, keyId: string) => {
     navigator.clipboard.writeText(text);
@@ -53,9 +81,33 @@ export default function DownloadsPage() {
   };
 
   const regenerateKey = (agentId: string) => {
-    // In real app, this would call API to regenerate key
-    alert("API key regeneration would be handled here");
+    // TODO: Implement API key regeneration in Phase 6
+    alert("API key regeneration will be available soon");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4">LOADING API KEYS...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4 text-red-500">ERROR</p>
+          <p className="neo-text text-xl mb-4">{error}</p>
+          <Link href="/account/purchases">
+            <Button>BACK TO PURCHASES</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -86,100 +138,126 @@ export default function DownloadsPage() {
         </Card>
 
         {/* Agents List */}
-        <div className="space-y-6">
-          {agents.map((agent) => (
-            <Card key={agent.id}>
-              <CardContent className="p-6">
-                <div className="mb-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="neo-heading text-2xl mb-1">{agent.name}</h3>
-                      <p className="neo-text text-gray-600">by {agent.vendor}</p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => regenerateKey(agent.id.toString())}
-                      className="text-red-500 hover:bg-red-50"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      REGENERATE KEY
-                    </Button>
-                  </div>
-
-                  {/* API Key */}
-                  <div className="bg-gray-100 neo-border p-4 mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Key className="w-4 h-4 text-gray-600" />
-                        <span className="neo-text text-sm font-bold">API KEY</span>
+        {agents.length === 0 ? (
+          <Card className="text-center py-16">
+            <CardContent>
+              <h2 className="neo-heading text-3xl mb-4">NO API KEYS FOUND</h2>
+              <p className="neo-text text-gray-600 mb-8">
+                {agentFilter ? "No keys found for this agent." : "You haven't purchased any agents yet."}
+              </p>
+              <Link href="/shop">
+                <Button size="lg">BROWSE AI AGENTS</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {agents.map((agent) => (
+              <Card key={agent.id}>
+                <CardContent className="p-6">
+                  <div className="mb-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <Link href={`/product/${agent.id}`}>
+                          <h3 className="neo-heading text-2xl mb-1 hover:text-pink-500 transition-colors">
+                            {agent.name}
+                          </h3>
+                        </Link>
+                        <p className="neo-text text-gray-600">by {agent.vendor}</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(agent.apiKey, agent.id.toString())}
-                      >
-                        {copiedKeys.has(agent.id.toString()) ? (
-                          <>
-                            <Copy className="w-4 h-4 mr-2" />
-                            COPIED!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4 mr-2" />
-                            COPY
-                          </>
-                        )}
-                      </Button>
+                      {agent.apiKeys.length > 1 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => regenerateKey(agent.id)}
+                          className="text-red-500 hover:bg-red-50"
+                          disabled
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          REGENERATE KEY
+                        </Button>
+                      )}
                     </div>
-                    <code className="neo-text text-xs break-all">{agent.apiKey}</code>
-                  </div>
 
-                  {/* Key Stats */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white neo-border p-4">
-                      <p className="neo-text text-xs text-gray-600 mb-1">CREATED</p>
-                      <p className="neo-heading">{agent.createdAt}</p>
+                    {/* API Keys */}
+                    <div className="space-y-3 mb-4">
+                      {agent.apiKeys.map((apiKey, index) => {
+                        const keyId = `${agent.id}-${index}`;
+                        return (
+                          <div key={keyId} className="bg-gray-100 neo-border p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Key className="w-4 h-4 text-gray-600" />
+                                <span className="neo-text text-sm font-bold">
+                                  API KEY {agent.apiKeys.length > 1 ? `${index + 1}` : ""}
+                                </span>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyToClipboard(apiKey, keyId)}
+                              >
+                                {copiedKeys.has(keyId) ? (
+                                  <>
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    COPIED!
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-4 h-4 mr-2" />
+                                    COPY
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                            <code className="neo-text text-xs break-all">{apiKey}</code>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="bg-white neo-border p-4">
-                      <p className="neo-text text-xs text-gray-600 mb-1">LAST USED</p>
-                      <p className="neo-heading">{agent.lastUsed}</p>
-                    </div>
-                    <div className="bg-white neo-border p-4">
-                      <p className="neo-text text-xs text-gray-600 mb-1">API CALLS</p>
-                      <p className="neo-heading">{agent.usage.toLocaleString()}</p>
-                    </div>
-                  </div>
 
-                  {/* Downloads */}
-                  <div>
-                    <h4 className="neo-heading text-lg mb-4">DOWNLOADS</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {agent.downloads.map((download, index) => (
-                        <Card key={index} className="bg-white">
+                    {/* Key Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="bg-white neo-border p-4">
+                        <p className="neo-text text-xs text-gray-600 mb-1">PURCHASED</p>
+                        <p className="neo-heading">
+                          {new Date(agent.purchasedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="bg-white neo-border p-4">
+                        <p className="neo-text text-xs text-gray-600 mb-1">TOTAL KEYS</p>
+                        <p className="neo-heading">{agent.apiKeys.length}</p>
+                      </div>
+                    </div>
+
+                    {/* Downloads */}
+                    {agent.documentationUrl && (
+                      <div>
+                        <h4 className="neo-heading text-lg mb-4">DOCUMENTATION</h4>
+                        <Card className="bg-white">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
                               <Download className="w-5 h-5 text-gray-600" />
                               <span className="neo-text text-xs bg-gray-200 px-2 py-1 neo-border">
-                                {download.type}
+                                LINK
                               </span>
                             </div>
-                            <h5 className="neo-heading text-sm mb-2">{download.name}</h5>
-                            <Link href={download.url}>
+                            <h5 className="neo-heading text-sm mb-2">API DOCUMENTATION</h5>
+                            <Link href={agent.documentationUrl} target="_blank" rel="noopener noreferrer">
                               <Button variant="outline" size="sm" className="w-full">
-                                DOWNLOAD
+                                VIEW DOCS
                               </Button>
                             </Link>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Warning */}
         <Card className="mt-6 bg-red-500 text-white">
