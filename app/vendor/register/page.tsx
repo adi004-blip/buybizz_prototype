@@ -73,8 +73,8 @@ export default function VendorRegisterPage() {
         throw new Error(errorData.error || "Failed to register as vendor");
       }
 
-      // Redirect to vendor dashboard
-      router.push("/vendor");
+      // Redirect to confirmation page
+      router.push("/vendor/register/confirmation");
     } catch (err: any) {
       console.error("Error registering as vendor:", err);
       setError(err.message || "Failed to register. Please try again or contact support.");
@@ -197,9 +197,9 @@ export default function VendorRegisterPage() {
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="neo-text font-bold mb-2">QUICK APPROVAL PROCESS</p>
+                    <p className="neo-text font-bold mb-2">APPLICATION PROCESS</p>
                     <p className="neo-text text-sm">
-                      FOR MVP, VENDORS ARE AUTO-APPROVED. YOU'LL BE ABLE TO START SELLING IMMEDIATELY AFTER SUBMITTING THIS FORM.
+                      SUBMIT YOUR APPLICATION AND OUR ADMIN TEAM WILL REVIEW IT. YOU'LL BE NOTIFIED ONCE YOUR APPLICATION IS APPROVED.
                     </p>
                   </div>
                 </div>

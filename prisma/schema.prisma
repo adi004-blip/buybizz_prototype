@@ -28,6 +28,12 @@ enum OrderStatus {
   FAILED
 }
 
+enum VendorApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id          String   @id // Clerk user ID
   email       String   @unique
@@ -43,6 +49,7 @@ model User {
   userAgents UserAgent[]
   sessions   Session[]
   cartItems  CartItem[]
+  vendorApplication VendorApplication?
 
   @@map("users")
 }
@@ -163,4 +170,24 @@ model CartItem {
   @@index([userId])
   @@index([agentId])
   @@map("cart_items")
+}
+
+model VendorApplication {
+  id          String                  @id @default(uuid())
+  userId      String                  @unique @map("user_id")
+  companyName String?                 @map("company_name")
+  description String                  @db.Text
+  status      VendorApplicationStatus @default(PENDING)
+  reviewedBy  String?                 @map("reviewed_by") // Admin user ID
+  reviewedAt  DateTime?               @map("reviewed_at")
+  rejectionReason String?             @map("rejection_reason") @db.Text
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([userId])
+  @@map("vendor_applications")
 }
