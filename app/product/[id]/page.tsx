@@ -35,6 +35,7 @@ export default function ProductPage() {
   const [product, setProduct] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -59,6 +60,38 @@ export default function ProductPage() {
       fetchProduct();
     }
   }, [id]);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+
+    try {
+      setAddingToCart(true);
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: product.id,
+          quantity: quantity,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          alert("Please sign in to add items to cart");
+          return;
+        }
+        throw new Error("Failed to add to cart");
+      }
+
+      alert("Added to cart!");
+      // Optionally redirect to cart or show success message
+    } catch (err: any) {
+      console.error("Error adding to cart:", err);
+      alert(`Error: ${err.message || "Failed to add to cart"}`);
+    } finally {
+      setAddingToCart(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -225,9 +258,14 @@ export default function ProductPage() {
                 </div>
               </div>
               <div className="flex gap-4">
-                <Button size="lg" className="flex-1 bg-black text-white border-white neo-shadow-xl">
+                <Button 
+                  size="lg" 
+                  className="flex-1 bg-black text-white border-white neo-shadow-xl"
+                  onClick={handleAddToCart}
+                  disabled={addingToCart}
+                >
                   <ShoppingCart className="w-6 h-6 mr-2" />
-                  ADD TO CART
+                  {addingToCart ? "ADDING..." : "ADD TO CART"}
                 </Button>
                 <Button variant="secondary" size="lg">
                   <Heart className="w-6 h-6" />

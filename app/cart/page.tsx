@@ -1,53 +1,156 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, Plus, Minus, ShoppingCart, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+interface CartItem {
+  id: string;
+  quantity: number;
+  agent: {
+    id: string;
+    name: string;
+    price: number;
+    originalPrice: number | null;
+    imageUrl: string | null;
+    shortDescription: string | null;
+    vendor: {
+      id: string;
+      fullName: string;
+      companyName: string | null;
+    };
+  };
+}
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "AI COPYWRITER PRO",
-      price: 97,
-      originalPrice: 297,
-      vendor: "AIWRITER",
-      description: "LIFETIME ACCESS TO AI-POWERED COPYWRITING AGENT",
-      quantity: 1
-    },
-    {
-      id: 2,
-      name: "CODE ASSISTANT AGENT",
-      price: 149,
-      originalPrice: 499,
-      vendor: "DEVTECH",
-      description: "REVOLUTIONARY AI AGENT FOR FASTER CODING",
-      quantity: 1
+  const router = useRouter();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [subtotal, setSubtotal] = useState(0);
+
+  // Fetch cart items
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/cart");
+        if (!response.ok) {
+          if (response.status === 401) {
+            router.push("/sign-in");
+            return;
+          }
+          throw new Error("Failed to fetch cart");
+        }
+        const data = await response.json();
+        setCartItems(data.items || []);
+        setSubtotal(parseFloat(data.subtotal || 0));
+        setError(null);
+      } catch (err: any) {
+        console.error("Error fetching cart:", err);
+        setError(err.message || "Failed to load cart");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [router]);
+
+  const updateQuantity = async (id: string, change: number) => {
+    const item = cartItems.find(i => i.id === id);
+    if (!item) return;
+
+    const newQuantity = Math.max(1, item.quantity + change);
+    
+    try {
+      const response = await fetch(`/api/cart/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: newQuantity }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update quantity");
+      }
+
+      const updatedItem = await response.json();
+      setCartItems(items =>
+        items.map(i => i.id === id ? updatedItem : i)
+      );
+
+      // Recalculate subtotal
+      const updatedItems = cartItems.map(i => i.id === id ? updatedItem : i);
+      const newSubtotal = updatedItems.reduce((sum, item) => {
+        return sum + Number(item.agent.price) * item.quantity;
+      }, 0);
+      setSubtotal(newSubtotal);
+    } catch (err: any) {
+      console.error("Error updating quantity:", err);
+      alert(`Error: ${err.message || "Failed to update quantity"}`);
     }
-  ]);
-
-  const updateQuantity = (id: number, change: number) => {
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const removeItem = async (id: string) => {
+    try {
+      const response = await fetch(`/api/cart/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove item");
+      }
+
+      setCartItems(items => items.filter(item => item.id !== id));
+      
+      // Recalculate subtotal
+      const updatedItems = cartItems.filter(item => item.id !== id);
+      const newSubtotal = updatedItems.reduce((sum, item) => {
+        return sum + Number(item.agent.price) * item.quantity;
+      }, 0);
+      setSubtotal(newSubtotal);
+    } catch (err: any) {
+      console.error("Error removing item:", err);
+      alert(`Error: ${err.message || "Failed to remove item"}`);
+    }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalSavings = cartItems.reduce(
-    (sum, item) => sum + (item.originalPrice - item.price) * item.quantity,
+    (sum, item) => {
+      const originalPrice = item.agent.originalPrice ? Number(item.agent.originalPrice) : 0;
+      const price = Number(item.agent.price);
+      return sum + (originalPrice - price) * item.quantity;
+    },
     0
   );
   const total = subtotal;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4">LOADING CART...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4 text-red-500">ERROR</p>
+          <p className="neo-text text-xl mb-4">{error}</p>
+          <Link href="/shop">
+            <Button>BACK TO SHOP</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -90,18 +193,30 @@ export default function CartPage() {
               <Card key={item.id}>
                 <CardContent className="p-6">
                   <div className="flex gap-6">
-                    {/* Product Image Placeholder */}
+                    {/* Product Image */}
                     <div className="w-32 h-32 bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0 flex items-center justify-center neo-border">
-                      <span className="neo-heading text-white text-xl">AI</span>
+                      {item.agent.imageUrl ? (
+                        <img src={item.agent.imageUrl} alt={item.agent.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="neo-heading text-white text-xl">AI</span>
+                      )}
                     </div>
 
                     {/* Product Info */}
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="neo-heading text-xl mb-1">{item.name}</h3>
-                          <p className="neo-text text-sm text-gray-600 mb-1">by {item.vendor}</p>
-                          <p className="neo-text text-xs text-gray-500">{item.description}</p>
+                          <Link href={`/product/${item.agent.id}`}>
+                            <h3 className="neo-heading text-xl mb-1 hover:text-pink-500 transition-colors">
+                              {item.agent.name}
+                            </h3>
+                          </Link>
+                          <p className="neo-text text-sm text-gray-600 mb-1">
+                            by {item.agent.vendor.companyName || item.agent.vendor.fullName}
+                          </p>
+                          <p className="neo-text text-xs text-gray-500">
+                            {item.agent.shortDescription || "LIFETIME ACCESS"}
+                          </p>
                         </div>
                         <Button
                           variant="outline"
@@ -117,14 +232,18 @@ export default function CartPage() {
                       <div className="flex justify-between items-center mt-4">
                         <div>
                           <div className="flex items-baseline gap-2">
-                            <span className="neo-heading text-2xl">${item.price}</span>
-                            <span className="neo-text text-sm text-gray-500 line-through">
-                              ${item.originalPrice}
-                            </span>
+                            <span className="neo-heading text-2xl">${Number(item.agent.price).toFixed(0)}</span>
+                            {item.agent.originalPrice && (
+                              <span className="neo-text text-sm text-gray-500 line-through">
+                                ${Number(item.agent.originalPrice).toFixed(0)}
+                              </span>
+                            )}
                           </div>
-                          <p className="neo-text text-xs text-green-600 mt-1">
-                            SAVE ${item.originalPrice - item.price}
-                          </p>
+                          {item.agent.originalPrice && (
+                            <p className="neo-text text-xs text-green-600 mt-1">
+                              SAVE ${Number(item.agent.originalPrice - item.agent.price).toFixed(0)}
+                            </p>
+                          )}
                         </div>
 
                         {/* Quantity Controls */}
@@ -167,12 +286,14 @@ export default function CartPage() {
                     <span className="neo-text text-gray-600">SUBTOTAL</span>
                     <span className="neo-heading">${subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="neo-text text-gray-600">TOTAL SAVINGS</span>
-                    <span className="neo-text text-green-600 font-bold">
-                      -${totalSavings.toFixed(2)}
-                    </span>
-                  </div>
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between">
+                      <span className="neo-text text-gray-600">TOTAL SAVINGS</span>
+                      <span className="neo-text text-green-600 font-bold">
+                        -${totalSavings.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="border-t-2 border-black pt-4">
                     <div className="flex justify-between">
                       <span className="neo-heading text-xl">TOTAL</span>

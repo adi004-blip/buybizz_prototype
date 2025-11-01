@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,8 +8,23 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Lock, CreditCard, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+interface CartItem {
+  id: string;
+  quantity: number;
+  agent: {
+    id: string;
+    name: string;
+    price: number;
+    originalPrice: number | null;
+  };
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [creatingOrder, setCreatingOrder] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     cardNumber: "",
@@ -22,31 +37,128 @@ export default function CheckoutPage() {
     country: "United States"
   });
 
-  const orderItems = [
-    {
-      id: 1,
-      name: "AI COPYWRITER PRO",
-      price: 97,
-      originalPrice: 297
-    },
-    {
-      id: 2,
-      name: "CODE ASSISTANT AGENT",
-      price: 149,
-      originalPrice: 499
-    }
-  ];
+  // Fetch cart items
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/cart");
+        if (!response.ok) {
+          if (response.status === 401) {
+            router.push("/sign-in");
+            return;
+          }
+          throw new Error("Failed to fetch cart");
+        }
+        const data = await response.json();
+        setCartItems(data.items || []);
+        setError(null);
 
-  const subtotal = orderItems.reduce((sum, item) => sum + item.price, 0);
-  const totalSavings = orderItems.reduce((sum, item) => sum + (item.originalPrice - item.price), 0);
+        if (data.items.length === 0) {
+          router.push("/cart");
+        }
+      } catch (err: any) {
+        console.error("Error fetching cart:", err);
+        setError(err.message || "Failed to load cart");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [router]);
+
+  const subtotal = cartItems.reduce((sum, item) => {
+    return sum + Number(item.agent.price) * item.quantity;
+  }, 0);
+  const totalSavings = cartItems.reduce((sum, item) => {
+    const originalPrice = item.agent.originalPrice ? Number(item.agent.originalPrice) : 0;
+    const price = Number(item.agent.price);
+    return sum + (originalPrice - price) * item.quantity;
+  }, 0);
   const total = subtotal;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In real app, this would process payment via Stripe
-    // For now, redirect to order confirmation
-    router.push(`/order/confirmation?orderId=ORD-${Date.now()}`);
+    
+    if (cartItems.length === 0) {
+      alert("Your cart is empty");
+      return;
+    }
+
+    try {
+      setCreatingOrder(true);
+      
+      // Create order
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push("/sign-in");
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create order");
+      }
+
+      const orderData = await response.json();
+      
+      // Redirect to confirmation page with order ID and API keys
+      const params = new URLSearchParams({
+        orderId: orderData.order.id,
+      });
+      
+      // Store API keys in sessionStorage temporarily (for confirmation page)
+      sessionStorage.setItem(`order_${orderData.order.id}`, JSON.stringify(orderData.apiKeys));
+      
+      router.push(`/order/confirmation?${params.toString()}`);
+    } catch (err: any) {
+      console.error("Error creating order:", err);
+      alert(`Error: ${err.message || "Failed to create order"}`);
+    } finally {
+      setCreatingOrder(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4">LOADING CHECKOUT...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4 text-red-500">ERROR</p>
+          <p className="neo-text text-xl mb-4">{error}</p>
+          <Link href="/cart">
+            <Button>BACK TO CART</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="neo-heading text-4xl mb-4">CART IS EMPTY</p>
+          <Link href="/shop">
+            <Button>CONTINUE SHOPPING</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -178,13 +290,13 @@ export default function CheckoutPage() {
                   <h2 className="neo-heading text-2xl mb-6">ORDER SUMMARY</h2>
 
                   <div className="space-y-3 mb-6">
-                    {orderItems.map((item) => (
+                    {cartItems.map((item) => (
                       <div key={item.id} className="flex justify-between items-start">
                         <div className="flex-1">
-                          <p className="neo-text text-sm">{item.name}</p>
-                          <p className="neo-text text-xs text-gray-500">LIFETIME ACCESS</p>
+                          <p className="neo-text text-sm">{item.agent.name}</p>
+                          <p className="neo-text text-xs text-gray-500">LIFETIME ACCESS × {item.quantity}</p>
                         </div>
-                        <span className="neo-heading">${item.price}</span>
+                        <span className="neo-heading">${(Number(item.agent.price) * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -212,9 +324,10 @@ export default function CheckoutPage() {
                     type="submit"
                     size="lg"
                     className="w-full mb-4"
+                    disabled={creatingOrder}
                   >
                     <Lock className="w-5 h-5 mr-2" />
-                    PAY ${total.toFixed(2)}
+                    {creatingOrder ? "CREATING ORDER..." : `PAY $${total.toFixed(2)}`}
                   </Button>
 
                   <div className="space-y-2 text-sm">
