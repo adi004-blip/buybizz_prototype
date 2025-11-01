@@ -459,7 +459,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Pending Vendor Applications */}
-            {pendingApplications.length > 0 && (
+            {pendingApplications.length > 0 ? (
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-center">
@@ -525,10 +525,10 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-            )}
+            ) : stats && stats.vendorApplications.pending === 0 ? null : null}
 
             {/* Top Vendors */}
-            {stats.topVendors.length > 0 && (
+            {stats.topVendors.length > 0 ? (
               <Card>
                 <CardHeader>
                   <CardTitle className="neo-heading text-2xl">TOP VENDORS</CardTitle>
@@ -553,7 +553,7 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-            )}
+            ) : null}
           </div>
         )}
 
