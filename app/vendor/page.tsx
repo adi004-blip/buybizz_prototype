@@ -195,7 +195,7 @@ export default function VendorDashboard() {
                     <Package className="w-12 h-12" />
                     <TrendingUp className="w-6 h-6" />
                   </div>
-                  <h3 className="neo-heading text-3xl mb-1">{stats.totalProducts}</h3>
+                  <h3 className="neo-heading text-3xl mb-1">{dashboardStats.totalProducts}</h3>
                   <p className="neo-text">TOTAL PRODUCTS</p>
                 </CardContent>
               </Card>
@@ -206,7 +206,7 @@ export default function VendorDashboard() {
                     <DollarSign className="w-12 h-12" />
                     <TrendingUp className="w-6 h-6" />
                   </div>
-                  <h3 className="neo-heading text-3xl mb-1">${stats.totalRevenue.toLocaleString()}</h3>
+                  <h3 className="neo-heading text-3xl mb-1">${dashboardStats.totalRevenue}</h3>
                   <p className="neo-text">TOTAL REVENUE</p>
                 </CardContent>
               </Card>
@@ -217,7 +217,7 @@ export default function VendorDashboard() {
                     <ShoppingCart className="w-12 h-12" />
                     <TrendingUp className="w-6 h-6" />
                   </div>
-                  <h3 className="neo-heading text-3xl mb-1">{stats.totalSales}</h3>
+                  <h3 className="neo-heading text-3xl mb-1">{dashboardStats.totalSales}</h3>
                   <p className="neo-text">TOTAL SALES</p>
                 </CardContent>
               </Card>
@@ -228,8 +228,10 @@ export default function VendorDashboard() {
                     <Users className="w-12 h-12" />
                     <TrendingUp className="w-6 h-6" />
                   </div>
-                  <h3 className="neo-heading text-3xl mb-1">{stats.totalCustomers}</h3>
-                  <p className="neo-text">CUSTOMERS</p>
+                  <h3 className="neo-heading text-3xl mb-1">
+                    {dashboardStats.monthlyGrowth >= 0 ? "+" : ""}{dashboardStats.monthlyGrowth}%
+                  </h3>
+                  <p className="neo-text">MONTHLY GROWTH</p>
                 </CardContent>
               </Card>
             </div>
