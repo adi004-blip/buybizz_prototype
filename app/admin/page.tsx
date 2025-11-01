@@ -525,7 +525,7 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-            ) : stats && stats.vendorApplications.pending === 0 ? null : null}
+            ) : null}
 
             {/* Top Vendors */}
             {stats.topVendors.length > 0 ? (
