@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Search, Menu, X } from "lucide-react";
@@ -9,11 +9,34 @@ import {
   SignUpButton,
   SignedIn,
   SignedOut,
+  useUser,
 } from "@clerk/nextjs";
 import UserMenu from "./user-menu";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const { user } = useUser();
+
+  // Fetch cart count
+  useEffect(() => {
+    if (user) {
+      fetch("/api/cart")
+        .then(res => res.json())
+        .then(data => {
+          if (data.items && Array.isArray(data.items)) {
+            const totalItems = data.items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+            setCartCount(totalItems);
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching cart:", err);
+          setCartCount(0);
+        });
+    } else {
+      setCartCount(0);
+    }
+  }, [user]);
 
   return (
     <header className="w-full neo-border-thick bg-white relative z-50 rounded-b-lg">
@@ -55,14 +78,18 @@ export default function Navbar() {
           {/* Right Actions */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Cart - Desktop */}
-            <Link href="/cart">
-              <Button variant="outline" size="sm" className="relative hidden md:flex">
-                <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs neo-border w-5 h-5 flex items-center justify-center font-bold">
-                  3
-                </span>
-              </Button>
-            </Link>
+            <SignedIn>
+              <Link href="/cart">
+                <Button variant="outline" size="sm" className="relative hidden md:flex">
+                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs neo-border w-5 h-5 flex items-center justify-center font-bold">
+                      {cartCount > 99 ? "99+" : cartCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            </SignedIn>
 
             {/* Auth */}
             <SignedIn>
@@ -159,15 +186,19 @@ export default function Navbar() {
                   </Button>
                 </SignUpButton>
               </SignedOut>
-              <Link href="/cart" className="w-full">
-                <Button variant="outline" className="w-full justify-center md:hidden relative">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  CART
-                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs neo-border w-5 h-5 flex items-center justify-center font-bold">
-                    3
-                  </span>
-                </Button>
-              </Link>
+              <SignedIn>
+                <Link href="/cart" className="w-full">
+                  <Button variant="outline" className="w-full justify-center md:hidden relative">
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    CART
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs neo-border w-5 h-5 flex items-center justify-center font-bold">
+                        {cartCount > 99 ? "99+" : cartCount}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+              </SignedIn>
             </div>
           </div>
         )}
@@ -175,4 +206,3 @@ export default function Navbar() {
     </header>
   );
 }
-
