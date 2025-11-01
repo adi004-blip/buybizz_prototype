@@ -67,11 +67,6 @@ export default function Navbar() {
             {/* Auth */}
             <SignedIn>
               <div className="hidden md:flex items-center gap-2">
-                <Link href="/vendor">
-                  <Button variant="secondary" size="sm" className="text-sm">
-                    SELL
-                  </Button>
-                </Link>
                 <UserMenu />
               </div>
             </SignedIn>
@@ -148,11 +143,6 @@ export default function Navbar() {
             {/* Mobile Auth */}
             <div className="flex flex-col gap-2 pt-2 border-t-2 border-black">
               <SignedIn>
-                <Link href="/vendor" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="secondary" className="w-full justify-center">
-                    SELL
-                  </Button>
-                </Link>
                 {/* Mobile Account Links */}
                 <div className="flex flex-col gap-1 px-2">
                   <Link 
