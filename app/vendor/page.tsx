@@ -40,11 +40,32 @@ export default function VendorDashboard() {
   const [products, setProducts] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+
+  // Check vendor access on client side as fallback
+  useEffect(() => {
+    const checkVendorAccess = async () => {
+      try {
+        const response = await fetch("/api/debug/vendor-check");
+        const data = await response.json();
+        if (!data.canAccess) {
+          router.push("/");
+          return;
+        }
+        setCheckingAccess(false);
+      } catch (err) {
+        console.error("Error checking vendor access:", err);
+        setCheckingAccess(false);
+      }
+    };
+
+    checkVendorAccess();
+  }, [router]);
 
   // Fetch vendor's products
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!user?.id) return;
+      if (!user?.id || checkingAccess) return;
       
       try {
         setLoading(true);
@@ -64,7 +85,7 @@ export default function VendorDashboard() {
     };
 
     fetchProducts();
-  }, [user?.id]);
+  }, [user?.id, checkingAccess]);
 
   // Calculate stats from real data
   const stats = {
@@ -103,6 +124,12 @@ export default function VendorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      {checkingAccess && (
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="neo-heading text-2xl">CHECKING ACCESS...</p>
+        </div>
+      )}
+      {!checkingAccess && (
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
@@ -491,6 +518,7 @@ export default function VendorDashboard() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
