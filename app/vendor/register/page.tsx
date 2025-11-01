@@ -213,7 +213,6 @@ export default function VendorRegisterPage() {
                   className="flex-1 bg-yellow-400 text-black"
                 >
                   {submitting ? "SUBMITTING..." : "SUBMIT APPLICATION"}
-                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
                 <Link href="/shop" className="flex-1">
                   <Button variant="outline" size="lg" className="w-full">

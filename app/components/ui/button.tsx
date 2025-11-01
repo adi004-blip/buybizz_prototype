@@ -10,7 +10,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", ...props }, ref) => {
-    const baseClasses = "neo-btn cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+    const baseClasses = "neo-btn cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
     
     const variants = {
       primary: "neo-btn-primary",

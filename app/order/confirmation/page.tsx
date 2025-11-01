@@ -255,7 +255,7 @@ function OrderConfirmationContent() {
           <Link href="/account/purchases" className="flex-1">
             <Button size="lg" className="w-full">
               VIEW MY PURCHASES
-              <ArrowRight className="ml-2 w-6 h-6" />
+              <ArrowRight className="w-6 h-6" />
             </Button>
           </Link>
           <Link href="/shop" className="flex-1">

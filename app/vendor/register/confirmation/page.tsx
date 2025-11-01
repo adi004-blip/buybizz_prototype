@@ -47,7 +47,7 @@ export default function VendorRegisterConfirmationPage() {
             <Link href="/account/settings">
               <Button size="lg" className="bg-yellow-400 text-black">
                 GO TO ACCOUNT
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
           </div>

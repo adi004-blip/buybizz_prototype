@@ -169,7 +169,7 @@ export default function CartPage() {
               <Link href="/shop">
                 <Button size="lg">
                   BROWSE AI AGENTS
-                  <ArrowRight className="ml-2 w-6 h-6" />
+                  <ArrowRight className="w-6 h-6" />
                 </Button>
               </Link>
             </CardContent>
@@ -306,7 +306,7 @@ export default function CartPage() {
                   <Link href="/checkout">
                     <Button size="lg" className="w-full">
                       PROCEED TO CHECKOUT
-                      <ArrowRight className="ml-2 w-6 h-6" />
+                      <ArrowRight className="w-6 h-6" />
                     </Button>
                   </Link>
                   <Link href="/shop">

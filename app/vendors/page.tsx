@@ -211,7 +211,6 @@ export default function VendorsPage() {
               <Link href={user ? "/vendor/register" : "/sign-in?redirect=/vendor/register"} className="inline-block">
                 <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
                   {user ? "APPLY NOW" : "SIGN IN TO APPLY"}
-                  <ArrowRight className="ml-2 w-6 h-6" />
                 </Button>
               </Link>
             </CardContent>

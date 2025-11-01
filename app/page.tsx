@@ -121,7 +121,7 @@ export default function HomePage() {
             <Link href="/shop">
               <Button size="lg" className="bg-black text-white border-white neo-shadow-xl">
                 BROWSE AI AGENTS
-                <ArrowRight className="ml-2 w-6 h-6" />
+                <ArrowRight className="w-6 h-6" />
               </Button>
             </Link>
             {showVendorButton && (
@@ -177,7 +177,7 @@ export default function HomePage() {
             <Link href="/shop">
               <Button variant="outline">
                 VIEW ALL
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
           </div>
@@ -286,7 +286,7 @@ export default function HomePage() {
               <Link href="/vendors">
                 <Button variant="outline" size="lg">
                   VIEW ALL CREATORS
-                  <ArrowRight className="ml-2 w-6 h-6" />
+                  <ArrowRight className="w-6 h-6" />
                 </Button>
               </Link>
             </div>
@@ -307,7 +307,7 @@ export default function HomePage() {
             <Link href={user ? "/vendor/register" : "/sign-in?redirect=/vendor/register"}>
               <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
                 {user ? "LIST YOUR AI AGENT" : "APPLY TO BECOME A VENDOR"}
-                <ArrowRight className="ml-2 w-6 h-6" />
+                <ArrowRight className="w-6 h-6" />
               </Button>
             </Link>
           </div>

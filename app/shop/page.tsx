@@ -31,12 +31,12 @@ export default function ShopPage() {
   const [error, setError] = useState<string | null>(null);
 
   const categories = [
-    { id: "all", name: "ALL AGENTS", color: "bg-black" },
-    { id: "writing", name: "WRITING AI", color: "bg-yellow-400" },
-    { id: "coding", name: "CODE ASSISTANTS", color: "bg-pink-400" },
-    { id: "marketing", name: "MARKETING AI", color: "bg-cyan-400" },
-    { id: "analytics", name: "ANALYTICS", color: "bg-green-400" },
-    { id: "design", name: "DESIGN AI", color: "bg-purple-400" }
+    { id: "all", name: "ALL AGENTS", color: "bg-white text-black" },
+    { id: "writing", name: "WRITING AI", color: "bg-yellow-400 text-black" },
+    { id: "coding", name: "CODE ASSISTANTS", color: "bg-pink-400 text-black" },
+    { id: "marketing", name: "MARKETING AI", color: "bg-cyan-400 text-black" },
+    { id: "analytics", name: "ANALYTICS", color: "bg-green-400 text-black" },
+    { id: "design", name: "DESIGN AI", color: "bg-purple-400 text-black" }
   ];
 
   // Fetch agents from API
@@ -111,8 +111,8 @@ export default function ShopPage() {
                 onClick={() => setSelectedCategory(category.id)}
                 className={`neo-border px-6 py-3 neo-shadow-md transition-all ${
                   selectedCategory === category.id
-                    ? `${category.color} text-black`
-                    : "bg-white hover:bg-gray-100"
+                    ? `${category.color}`
+                    : "bg-white hover:bg-gray-100 text-black"
                 }`}
               >
                 <span className="neo-text font-bold">{category.name}</span>
