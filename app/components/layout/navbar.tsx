@@ -72,14 +72,7 @@ export default function Navbar() {
                     SELL
                   </Button>
                 </Link>
-                <UserButton 
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      avatarBox: "neo-border neo-shadow-sm w-8 h-8"
-                    }
-                  }}
-                />
+                <UserMenu />
               </div>
             </SignedIn>
             
@@ -160,15 +153,32 @@ export default function Navbar() {
                     SELL
                   </Button>
                 </Link>
-                <div className="flex items-center justify-center">
-                  <UserButton 
-                    afterSignOutUrl="/"
-                    appearance={{
-                      elements: {
-                        avatarBox: "neo-border neo-shadow-sm"
-                      }
-                    }}
-                />
+                {/* Mobile Account Links */}
+                <div className="flex flex-col gap-1 px-2">
+                  <Link 
+                    href="/account/purchases" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="neo-text text-sm py-2 px-3 hover:bg-yellow-400 transition-colors neo-border"
+                  >
+                    MY PURCHASES
+                  </Link>
+                  <Link 
+                    href="/account/downloads" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="neo-text text-sm py-2 px-3 hover:bg-yellow-400 transition-colors neo-border"
+                  >
+                    MY DOWNLOADS
+                  </Link>
+                  <Link 
+                    href="/account/settings" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="neo-text text-sm py-2 px-3 hover:bg-yellow-400 transition-colors neo-border"
+                  >
+                    ACCOUNT SETTINGS
+                  </Link>
+                </div>
+                <div className="flex items-center justify-center pt-2">
+                  <UserMenu />
                 </div>
               </SignedIn>
               <SignedOut>
