@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Star, Store, Search, Loader2 } from "lucide-react";
+import { Star, Store, Search, Loader2, ArrowRight } from "lucide-react";
 
 interface Creator {
   id: string;
@@ -175,9 +175,10 @@ export default function VendorsPage() {
             <p className="neo-text text-xl mb-8 text-gray-300">
               JOIN OUR MARKETPLACE AND START SELLING YOUR AI AGENTS TODAY
             </p>
-            <Link href="/vendor/register">
+            <Link href="/vendor/register" className="inline-block">
               <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">
                 APPLY NOW
+                <ArrowRight className="ml-2 w-6 h-6" />
               </Button>
             </Link>
           </CardContent>

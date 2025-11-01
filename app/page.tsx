@@ -1,50 +1,74 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Zap, Shield, Truck, Star } from "lucide-react";
+import { ArrowRight, Zap, Shield, Star, Loader2 } from "lucide-react";
+
+interface Agent {
+  id: string;
+  name: string;
+  price: string;
+  originalPrice: string | null;
+  imageUrl: string | null;
+  vendor: {
+    id: string;
+    fullName: string;
+    companyName: string | null;
+  };
+  shortDescription: string | null;
+  description: string;
+}
+
+interface Creator {
+  id: string;
+  name: string;
+  totalProducts: number;
+  rating: number;
+  slug: string;
+}
 
 export default function HomePage() {
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "AI COPYWRITER PRO",
-      price: "$97",
-      originalPrice: "$297",
-      image: "/api/placeholder/300/300",
-      vendor: "AIWRITER",
-      rating: 4.9,
-      description: "LIFETIME ACCESS TO AI-POWERED COPYWRITING AGENT"
-    },
-    {
-      id: 2,
-      name: "CODE ASSISTANT AGENT",
-      price: "$149",
-      originalPrice: "$499",
-      image: "/api/placeholder/300/300",
-      vendor: "DEVTECH",
-      rating: 4.8,
-      description: "REVOLUTIONARY AI AGENT FOR FASTER CODING"
-    },
-    {
-      id: 3,
-      name: "SOCIAL MEDIA MANAGER AI",
-      price: "$79",
-      originalPrice: "$199",
-      image: "/api/placeholder/300/300",
-      vendor: "SOCIALAI",
-      rating: 4.9,
-      description: "AUTOMATE YOUR SOCIAL MEDIA WITH AI POWER"
-    }
-  ];
+  const [featuredProducts, setFeaturedProducts] = useState<Agent[]>([]);
+  const [topCreators, setTopCreators] = useState<Creator[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const topCreators = [
-    { name: "AIWRITER", products: 23, rating: 4.9, color: "bg-yellow-400", category: "WRITING AI" },
-    { name: "DEVTECH", products: 15, rating: 4.8, color: "bg-pink-400", category: "DEVELOPMENT" },
-    { name: "SOCIALAI", products: 18, rating: 4.9, color: "bg-cyan-400", category: "MARKETING" },
-    { name: "DATABOT", products: 12, rating: 4.7, color: "bg-green-400", category: "ANALYTICS" }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch featured products (latest 3 active agents)
+        const productsResponse = await fetch("/api/agents?status=ACTIVE&limit=3");
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          setFeaturedProducts(productsData.agents || []);
+        }
+
+        // Fetch top creators (limit to 4)
+        const creatorsResponse = await fetch("/api/creators");
+        if (creatorsResponse.ok) {
+          const creatorsData = await creatorsResponse.json();
+          // Sort by totalProducts and take top 4
+          const sorted = (creatorsData.creators || []).sort((a: Creator, b: Creator) => b.totalProducts - a.totalProducts).slice(0, 4);
+          setTopCreators(sorted);
+        }
+
+        setError(null);
+      } catch (err: any) {
+        console.error("Error fetching homepage data:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const colors = ["bg-yellow-400", "bg-pink-400", "bg-cyan-400", "bg-green-400"];
 
   return (
     <div className="min-h-screen">
@@ -122,88 +146,118 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
-              <Link key={product.id} href={`/product/${product.id}`}>
-                <Card className="overflow-hidden cursor-pointer h-full">
-                  <div className="aspect-square bg-gradient-to-br from-purple-400 to-pink-400 relative flex items-center justify-center">
-                    <div className="text-center px-4">
-                      <div className="w-20 h-20 bg-black text-white neo-border neo-shadow-lg mx-auto mb-4 flex items-center justify-center">
-                        <Zap className="w-10 h-10" />
-                      </div>
-                      <p className="neo-text text-white text-sm">AI AGENT</p>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin mr-3" />
+              <p className="neo-heading text-xl">LOADING AI AGENTS...</p>
+            </div>
+          ) : error ? (
+            <Card className="bg-red-400">
+              <CardContent className="p-6 text-center">
+                <p className="neo-text text-white">{error}</p>
+              </CardContent>
+            </Card>
+          ) : featuredProducts.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="neo-text text-gray-600">NO AI AGENTS AVAILABLE YET</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredProducts.map((product) => (
+                <Link key={product.id} href={`/product/${product.id}`}>
+                  <Card className="overflow-hidden cursor-pointer h-full">
+                    <div className="aspect-square bg-gradient-to-br from-purple-400 to-pink-400 relative flex items-center justify-center">
+                      {product.imageUrl ? (
+                        <img 
+                          src={product.imageUrl} 
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-center px-4">
+                          <div className="w-20 h-20 bg-black text-white neo-border neo-shadow-lg mx-auto mb-4 flex items-center justify-center">
+                            <Zap className="w-10 h-10" />
+                          </div>
+                          <p className="neo-text text-white text-sm">AI AGENT</p>
+                        </div>
+                      )}
+                      {product.originalPrice && (
+                        <div className="absolute top-4 right-4 bg-green-500 text-white neo-border px-3 py-1 neo-shadow-sm">
+                          <span className="neo-text text-xs font-bold">LIFETIME</span>
+                        </div>
+                      )}
                     </div>
-                    {product.originalPrice && (
-                      <div className="absolute top-4 right-4 bg-green-500 text-white neo-border px-3 py-1 neo-shadow-sm">
-                        <span className="neo-text text-xs font-bold">LIFETIME</span>
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="neo-heading text-xl">{product.name}</h3>
                       </div>
-                    )}
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="neo-heading text-xl">{product.name}</h3>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="neo-text text-sm">{product.rating}</span>
+                      <p className="neo-text text-gray-600 mb-2 text-sm">
+                        by {product.vendor.companyName || product.vendor.fullName}
+                      </p>
+                      <p className="neo-text text-xs text-gray-500 mb-4">
+                        {product.shortDescription || product.description.substring(0, 80)}...
+                      </p>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="neo-heading text-2xl">${Number(product.price).toFixed(0)}</span>
+                          {product.originalPrice && (
+                            <span className="neo-text text-sm text-gray-500 line-through ml-2">
+                              ${Number(product.originalPrice).toFixed(0)}
+                            </span>
+                          )}
+                        </div>
+                        <Button size="sm">UNLOCK</Button>
                       </div>
-                    </div>
-                    <p className="neo-text text-gray-600 mb-2 text-sm">by {product.vendor}</p>
-                    <p className="neo-text text-xs text-gray-500 mb-4">{product.description}</p>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="neo-heading text-2xl">{product.price}</span>
-                        {product.originalPrice && (
-                          <span className="neo-text text-sm text-gray-500 line-through ml-2">
-                            {product.originalPrice}
-                          </span>
-                        )}
-                      </div>
-                      <Button size="sm">UNLOCK</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Top Vendors */}
-      <section className="py-20 px-4 bg-white">
-        <div className="mx-auto max-w-7xl">
-          <h2 className="neo-heading text-4xl md:text-6xl text-center mb-16">
-            TOP <span className="text-purple-500">CREATORS</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {topCreators.map((creator) => (
-              <Link key={creator.name} href={`/vendors/${creator.name.toLowerCase()}`}>
-                <Card className={`${creator.color} text-center cursor-pointer`}>
-                  <CardContent className="p-6">
-                    <div className="w-16 h-16 bg-black text-white neo-border mx-auto mb-4 flex items-center justify-center">
-                      <span className="neo-heading text-2xl">{creator.name[0]}</span>
-                    </div>
-                    <h3 className="neo-heading text-xl mb-1">{creator.name}</h3>
-                    <p className="neo-text text-xs mb-2 text-gray-800">{creator.category}</p>
-                    <p className="neo-text mb-2">{creator.products} AGENTS</p>
-                    <div className="flex items-center justify-center gap-1">
-                      <Star className="w-4 h-4 fill-black text-black" />
-                      <span className="neo-text">{creator.rating}</span>
-                    </div>
-                  </CardContent>
-                </Card>
+      {/* Top Creators */}
+      {topCreators.length > 0 && (
+        <section className="py-20 px-4 bg-white">
+          <div className="mx-auto max-w-7xl">
+            <h2 className="neo-heading text-4xl md:text-6xl text-center mb-16">
+              TOP <span className="text-purple-500">CREATORS</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {topCreators.map((creator, index) => (
+                <Link key={creator.id} href={`/creators/${creator.slug}`}>
+                  <Card className={`${colors[index % colors.length]} text-center cursor-pointer`}>
+                    <CardContent className="p-6">
+                      <div className="w-16 h-16 bg-black text-white neo-border mx-auto mb-4 flex items-center justify-center">
+                        <span className="neo-heading text-2xl">{creator.name[0]}</span>
+                      </div>
+                      <h3 className="neo-heading text-xl mb-1">{creator.name}</h3>
+                      <p className="neo-text mb-2">{creator.totalProducts} AGENTS</p>
+                      {creator.rating > 0 && (
+                        <div className="flex items-center justify-center gap-1">
+                          <Star className="w-4 h-4 fill-black text-black" />
+                          <span className="neo-text">{creator.rating.toFixed(1)}</span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center mt-12">
+              <Link href="/vendors">
+                <Button variant="outline" size="lg">
+                  VIEW ALL CREATORS
+                  <ArrowRight className="ml-2 w-6 h-6" />
+                </Button>
               </Link>
-            ))}
+            </div>
           </div>
-          <div className="text-center mt-12">
-            <Link href="/vendors">
-              <Button variant="outline" size="lg">
-                VIEW ALL CREATORS
-                <ArrowRight className="ml-2 w-6 h-6" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-20 px-4 bg-black text-white">
