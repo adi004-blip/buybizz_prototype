@@ -5,35 +5,52 @@ import { db } from "./db";
  * Get current user from Clerk and sync with database
  */
 export async function getCurrentUser() {
-  const { userId } = await auth();
-  
-  if (!userId) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return null;
+    }
+
+    // Try to get user from database using Clerk ID
+    let user = await db.user.findUnique({
+      where: { id: userId },
+    });
+
+    // If user doesn't exist in DB, create it (this should be handled by webhook, but fallback)
+    if (!user) {
+      try {
+        const clerkUser = await currentUser();
+        if (clerkUser) {
+          user = await db.user.create({
+            data: {
+              id: userId,
+              email: clerkUser.emailAddresses[0]?.emailAddress || `${userId}@clerk.user`,
+              fullName: clerkUser.firstName && clerkUser.lastName 
+                ? `${clerkUser.firstName} ${clerkUser.lastName}`
+                : clerkUser.username || "User",
+              role: "CUSTOMER",
+            },
+          });
+        }
+      } catch (createError: any) {
+        // If user creation fails, log but don't throw - might be a race condition
+        console.error("[getCurrentUser] Error creating user:", createError);
+        // Return null if we can't create the user
+        return null;
+      }
+    }
+
+    return user;
+  } catch (error: any) {
+    // Log error but don't throw - return null instead
+    console.error("[getCurrentUser] Error:", {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+    });
     return null;
   }
-
-  // Try to get user from database using Clerk ID
-  let user = await db.user.findUnique({
-    where: { id: userId },
-  });
-
-  // If user doesn't exist in DB, create it (this should be handled by webhook, but fallback)
-  if (!user) {
-    const clerkUser = await currentUser();
-    if (clerkUser) {
-      user = await db.user.create({
-        data: {
-          id: userId,
-          email: clerkUser.emailAddresses[0]?.emailAddress || `${userId}@clerk.user`,
-          fullName: clerkUser.firstName && clerkUser.lastName 
-            ? `${clerkUser.firstName} ${clerkUser.lastName}`
-            : clerkUser.username || "User",
-          role: "CUSTOMER",
-        },
-      });
-    }
-  }
-
-  return user;
 }
 
 /**

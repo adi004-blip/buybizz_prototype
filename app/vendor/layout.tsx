@@ -8,20 +8,30 @@ export default async function VendorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
-  
-  if (!user) {
+  try {
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      redirect("/");
+    }
+
+    // Double-check role - log for debugging
+    const isVendor = user.role === "VENDOR";
+    
+    if (!isVendor) {
+      // Log the actual role value for debugging
+      console.error(`[VendorLayout] Access denied. User role: "${user.role}", Expected: "VENDOR"`);
+      redirect("/");
+    }
+
+    return <>{children}</>;
+  } catch (error: any) {
+    // Log error for debugging
+    console.error("[VendorLayout] Error:", {
+      message: error.message,
+      stack: error.stack,
+    });
+    // Redirect to home on any error
     redirect("/");
   }
-
-  // Double-check role - log for debugging
-  const isVendor = user.role === "VENDOR";
-  
-  if (!isVendor) {
-    // Log the actual role value for debugging
-    console.error(`[VendorLayout] Access denied. User role: "${user.role}", Expected: "VENDOR"`);
-    redirect("/");
-  }
-
-  return <>{children}</>;
 }
