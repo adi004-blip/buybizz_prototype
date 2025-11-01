@@ -106,13 +106,10 @@ export default function CheckoutPage() {
 
       const orderData = await response.json();
       
-      // Redirect to confirmation page with order ID and API keys
+      // Redirect to confirmation page with order ID
       const params = new URLSearchParams({
         orderId: orderData.order.id,
       });
-      
-      // Store API keys in sessionStorage temporarily (for confirmation page)
-      sessionStorage.setItem(`order_${orderData.order.id}`, JSON.stringify(orderData.apiKeys));
       
       router.push(`/order/confirmation?${params.toString()}`);
     } catch (err: any) {
