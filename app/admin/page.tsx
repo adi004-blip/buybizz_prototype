@@ -186,9 +186,9 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
-  // Fetch users when tab is active
+  // Fetch users when tab is active (for both Users and Vendors tabs)
   useEffect(() => {
-    if (activeTab === "users") {
+    if (activeTab === "users" || activeTab === "vendors") {
       setUsersLoading(true);
       fetch("/api/admin/users")
         .then(res => res.json())
@@ -664,14 +664,103 @@ export default function AdminDashboard() {
         {/* Vendors Tab */}
         {activeTab === "vendors" && (
           <div className="space-y-6">
-            <h2 className="neo-heading text-3xl">ALL VENDORS</h2>
-            <Card>
-              <CardContent className="p-6">
-                <p className="neo-text text-gray-600 text-center py-12">
-                  VENDOR MANAGEMENT - FILTER BY ROLE IN USERS TAB
-                </p>
-              </CardContent>
-            </Card>
+            <div className="flex justify-between items-center">
+              <h2 className="neo-heading text-3xl">ALL VENDORS</h2>
+              <div className="flex gap-2">
+                <Input placeholder="SEARCH VENDORS..." className="w-64" />
+                <Button variant="outline">
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            {usersLoading ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                  <p className="neo-text">LOADING VENDORS...</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-6">
+                  {users.filter(u => u.role === "VENDOR" || u.role === "ADMIN").length > 0 ? (
+                    <div className="space-y-4">
+                      {users
+                        .filter(u => u.role === "VENDOR" || u.role === "ADMIN")
+                        .map((vendor) => (
+                          <div
+                            key={vendor.id}
+                            className="neo-border p-6 bg-white"
+                          >
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h3 className="neo-heading text-xl">{vendor.fullName}</h3>
+                                  {vendor.role === "ADMIN" && (
+                                    <span className="bg-red-400 text-white px-2 py-1 neo-border text-xs neo-shadow-sm">
+                                      ADMIN
+                                    </span>
+                                  )}
+                                  <span className={`neo-text px-3 py-1 neo-border neo-shadow-sm text-xs ${
+                                    vendor.role === "VENDOR" ? "bg-green-400" : "bg-red-400"
+                                  }`}>
+                                    {vendor.role}
+                                  </span>
+                                </div>
+                                <p className="neo-text text-gray-600">{vendor.email}</p>
+                                {vendor.companyName && (
+                                  <p className="neo-text text-sm text-gray-500">{vendor.companyName}</p>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <p className="neo-heading text-2xl mb-1">{vendor.stats.products}</p>
+                                <p className="neo-text text-gray-600">PRODUCTS</p>
+                                <p className="neo-heading text-xl mt-2">{vendor.stats.orders}</p>
+                                <p className="neo-text text-gray-600">ORDERS</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button variant="outline" className="flex-1">
+                                VIEW DETAILS
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                className="bg-blue-500 text-white border-blue-500"
+                                onClick={() => {
+                                  const userId = vendor.id;
+                                  const newRole = vendor.role === "VENDOR" ? "CUSTOMER" : "VENDOR";
+                                  if (confirm(`Change ${vendor.fullName}'s role to ${newRole}?`)) {
+                                    fetch(`/api/admin/users/${userId}/role`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ role: newRole }),
+                                    })
+                                      .then(res => res.json())
+                                      .then(data => {
+                                        if (data.success) {
+                                          window.location.reload();
+                                        } else {
+                                          alert(data.error || "Failed to update role");
+                                        }
+                                      })
+                                      .catch(err => alert("Failed to update role"));
+                                  }
+                                }}
+                              >
+                                {vendor.role === "VENDOR" ? "DEMOTE" : "PROMOTE"}
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="neo-text text-gray-600 text-center py-12">
+                      NO VENDORS FOUND
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
