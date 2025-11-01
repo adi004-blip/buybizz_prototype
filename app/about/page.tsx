@@ -109,13 +109,13 @@ export default function AboutPage() {
         {/* CTA */}
         <Card className="bg-black text-white">
           <CardContent className="p-12 text-center">
-            <h2 className="neo-heading text-4xl mb-4">
+            <h2 className="neo-heading text-4xl mb-4 text-white">
               READY TO JOIN THE <span className="text-yellow-400">REVOLUTION?</span>
             </h2>
             <p className="neo-text text-xl mb-8 text-gray-300">
               START SELLING OR SHOPPING TODAY
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {showVendorButton && (
                 <Link href={user ? "/vendor/register" : "/sign-in?redirect=/vendor/register"}>
                   <Button size="lg" className="bg-yellow-400 text-black border-white neo-shadow-xl">

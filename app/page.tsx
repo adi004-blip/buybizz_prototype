@@ -117,7 +117,7 @@ export default function HomePage() {
           <p className="neo-text text-xl md:text-2xl text-black mb-8 max-w-3xl mx-auto">
             DISCOVER LIFETIME DEALS ON CUTTING-EDGE AI AGENTS. ONE-TIME PAYMENT, FOREVER ACCESS.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/shop">
               <Button size="lg" className="bg-black text-white border-white neo-shadow-xl">
                 BROWSE AI AGENTS

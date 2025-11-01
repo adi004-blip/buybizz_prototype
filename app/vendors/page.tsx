@@ -202,7 +202,7 @@ export default function VendorsPage() {
         {showVendorButton && (
           <Card className="mt-12 bg-black text-white">
             <CardContent className="p-12 text-center">
-              <h2 className="neo-heading text-4xl mb-4">
+              <h2 className="neo-heading text-4xl mb-4 text-white">
                 WANT TO BECOME A <span className="text-yellow-400">CREATOR?</span>
               </h2>
               <p className="neo-text text-xl mb-8 text-gray-300">

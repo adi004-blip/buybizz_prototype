@@ -31,7 +31,7 @@ export default function ShopPage() {
   const [error, setError] = useState<string | null>(null);
 
   const categories = [
-    { id: "all", name: "ALL AGENTS", color: "bg-white text-black" },
+    { id: "all", name: "ALL AGENTS", color: "bg-blue-400 text-black" },
     { id: "writing", name: "WRITING AI", color: "bg-yellow-400 text-black" },
     { id: "coding", name: "CODE ASSISTANTS", color: "bg-pink-400 text-black" },
     { id: "marketing", name: "MARKETING AI", color: "bg-cyan-400 text-black" },
