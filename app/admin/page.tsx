@@ -394,7 +394,9 @@ export default function AdminDashboard() {
                     <Store className="w-12 h-12" />
                     <TrendingUp className="w-6 h-6" />
                   </div>
-                  <h3 className="neo-heading text-3xl mb-1">{stats.users.vendors.toLocaleString()}</h3>
+                  <h3 className="neo-heading text-3xl mb-1">
+                    {stats?.users?.vendors !== undefined ? stats.users.vendors.toLocaleString() : "0"}
+                  </h3>
                   <p className="neo-text">TOTAL VENDORS</p>
                 </CardContent>
               </Card>
