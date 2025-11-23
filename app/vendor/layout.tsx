@@ -11,38 +11,17 @@ export default async function VendorLayout({
   try {
     const user = await getCurrentUser();
     
-    // Log for debugging
-    console.log("[VendorLayout] User check:", {
-      userExists: !!user,
-      userId: user?.id,
-      userEmail: user?.email,
-      userRole: user?.role,
-      roleType: typeof user?.role,
-    });
-    
     if (!user) {
-      console.log("[VendorLayout] No user found, redirecting to home");
       redirect("/");
     }
 
-    // Double-check role - log for debugging
-    const isVendor = user.role === "VENDOR";
+    // Allow VENDOR and ADMIN roles to access vendor dashboard
+    const hasAccess = user.role === "VENDOR" || user.role === "ADMIN";
     
-    console.log("[VendorLayout] Role check:", {
-      userRole: user.role,
-      expectedRole: "VENDOR",
-      isVendor: isVendor,
-      roleMatch: user.role === "VENDOR",
-      roleType: typeof user.role,
-    });
-    
-    if (!isVendor) {
-      // Log the actual role value for debugging
-      console.error(`[VendorLayout] Access denied. User role: "${user.role}", Expected: "VENDOR"`);
+    if (!hasAccess) {
       redirect("/");
     }
 
-    console.log("[VendorLayout] Access granted, rendering children");
     return <>{children}</>;
   } catch (error: any) {
     // Next.js redirect() throws a special error - we need to rethrow it
@@ -50,12 +29,8 @@ export default async function VendorLayout({
       throw error;
     }
     
-    // Log other errors for debugging
-    console.error("[VendorLayout] Error:", {
-      message: error.message,
-      stack: error.stack,
-      digest: error.digest,
-    });
+    // Log error for debugging
+    console.error("[VendorLayout] Error:", error);
     // Redirect to home on any other error
     redirect("/");
   }

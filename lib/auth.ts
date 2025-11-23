@@ -108,11 +108,12 @@ export async function requireAuth() {
 }
 
 /**
- * Require vendor role - throws if not vendor
+ * Require vendor role - throws if not vendor or admin
+ * Admins can access vendor features
  */
 export async function requireVendor() {
   const user = await requireAuth();
-  if (user.role !== "VENDOR") {
+  if (user.role !== "VENDOR" && user.role !== "ADMIN") {
     throw new Error("Forbidden: Vendor access required");
   }
   return user;

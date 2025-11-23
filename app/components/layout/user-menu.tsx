@@ -28,6 +28,7 @@ export default function UserMenu() {
         const response = await fetch("/api/user/role");
         if (response.ok) {
           const data = await response.json();
+          // ADMIN users can access vendor dashboard, so show vendor links for both VENDOR and ADMIN
           setIsVendor(data.role === "VENDOR" || data.role === "ADMIN");
           setIsAdmin(data.role === "ADMIN");
         }
