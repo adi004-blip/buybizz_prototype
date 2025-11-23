@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { notifyCartUpdate } from "@/app/contexts/cart-context";
 
 interface Agent {
   id: string;
@@ -29,6 +31,8 @@ interface Agent {
 
 export default function ProductPage() {
   const params = useParams();
+  const router = useRouter();
+  const { user } = useUser();
   const id = params.id as string;
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -64,6 +68,11 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     if (!product) return;
 
+    if (!user) {
+      router.push("/sign-in?redirect=" + encodeURIComponent(`/product/${product.id}`));
+      return;
+    }
+
     try {
       setAddingToCart(true);
       const response = await fetch("/api/cart", {
@@ -77,14 +86,15 @@ export default function ProductPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          alert("Please sign in to add items to cart");
+          router.push("/sign-in?redirect=" + encodeURIComponent(`/product/${product.id}`));
           return;
         }
         throw new Error("Failed to add to cart");
       }
 
+      // Notify cart context to update
+      notifyCartUpdate();
       alert("Added to cart!");
-      // Optionally redirect to cart or show success message
     } catch (err: any) {
       console.error("Error adding to cart:", err);
       alert(`Error: ${err.message || "Failed to add to cart"}`);

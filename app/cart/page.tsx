@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, Plus, Minus, ShoppingCart, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { notifyCartUpdate } from "@/app/contexts/cart-context";
 
 interface CartItem {
   id: string;
@@ -88,6 +89,9 @@ export default function CartPage() {
         return sum + Number(item.agent.price) * item.quantity;
       }, 0);
       setSubtotal(newSubtotal);
+      
+      // Notify cart context to update
+      notifyCartUpdate();
     } catch (err: any) {
       console.error("Error updating quantity:", err);
       alert(`Error: ${err.message || "Failed to update quantity"}`);
@@ -112,6 +116,9 @@ export default function CartPage() {
         return sum + Number(item.agent.price) * item.quantity;
       }, 0);
       setSubtotal(newSubtotal);
+      
+      // Notify cart context to update
+      notifyCartUpdate();
     } catch (err: any) {
       console.error("Error removing item:", err);
       alert(`Error: ${err.message || "Failed to remove item"}`);

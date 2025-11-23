@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Search, Menu, X } from "lucide-react";
@@ -9,34 +9,13 @@ import {
   SignUpButton,
   SignedIn,
   SignedOut,
-  useUser,
 } from "@clerk/nextjs";
 import UserMenu from "./user-menu";
+import { useCart } from "@/app/contexts/cart-context";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-  const { user } = useUser();
-
-  // Fetch cart count
-  useEffect(() => {
-    if (user) {
-      fetch("/api/cart")
-        .then(res => res.json())
-        .then(data => {
-          if (data.items && Array.isArray(data.items)) {
-            const totalItems = data.items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
-            setCartCount(totalItems);
-          }
-        })
-        .catch(err => {
-          console.error("Error fetching cart:", err);
-          setCartCount(0);
-        });
-    } else {
-      setCartCount(0);
-    }
-  }, [user]);
+  const { cartCount } = useCart();
 
   return (
     <header className="w-full neo-border-thick bg-white relative z-50 rounded-b-lg">
@@ -133,14 +112,27 @@ export default function Navbar() {
         {mobileMenuOpen && (
           <div className="lg:hidden mt-4 pb-4 space-y-4">
             {/* Mobile Search */}
-            <div className="relative">
+            <form 
+              className="relative"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const search = formData.get("search") as string;
+                if (search) {
+                  window.location.href = `/shop?search=${encodeURIComponent(search)}`;
+                }
+              }}
+            >
               <input
                 type="text"
+                name="search"
                 placeholder="SEARCH AI AGENTS..."
                 className="neo-input w-full pr-12 placeholder:text-gray-600"
               />
-              <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-            </div>
+              <button type="submit" className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                <Search className="w-5 h-5 text-gray-500" />
+              </button>
+            </form>
 
             {/* Mobile Navigation */}
             <nav className="flex flex-col gap-3">

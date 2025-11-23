@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Filter, Grid, List, Star, ShoppingCart } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { notifyCartUpdate } from "@/app/contexts/cart-context";
 
 interface Agent {
   id: string;
@@ -23,12 +26,15 @@ interface Agent {
 }
 
 export default function ShopPage() {
+  const router = useRouter();
+  const { user } = useUser();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
 
   const categories = [
     { id: "all", name: "ALL AGENTS", color: "bg-blue-400 text-black" },
@@ -71,7 +77,54 @@ export default function ShopPage() {
     fetchAgents();
   }, [selectedCategory, searchQuery]);
 
+  // Read search query from URL on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlSearch = urlParams.get("search");
+      if (urlSearch && urlSearch !== searchQuery) {
+        setSearchQuery(urlSearch);
+      }
+    }
+  }, []);
+
   const filteredAgents = agents;
+
+  const handleAddToCart = async (agentId: string) => {
+    if (!user) {
+      router.push("/sign-in?redirect=" + encodeURIComponent("/shop"));
+      return;
+    }
+
+    try {
+      setAddingToCart(agentId);
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: agentId,
+          quantity: 1,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push("/sign-in?redirect=" + encodeURIComponent("/shop"));
+          return;
+        }
+        throw new Error("Failed to add to cart");
+      }
+
+      // Notify cart context to update
+      notifyCartUpdate();
+      alert("Added to cart!");
+    } catch (err: any) {
+      console.error("Error adding to cart:", err);
+      alert(`Error: ${err.message || "Failed to add to cart"}`);
+    } finally {
+      setAddingToCart(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -97,10 +150,11 @@ export default function ShopPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            <Button variant="primary">
+            {/* Filters button - TODO: Implement advanced filters */}
+            {/* <Button variant="primary">
               <Filter className="w-5 h-5 mr-2" />
               FILTERS
-            </Button>
+            </Button> */}
           </div>
 
           {/* Categories */}
@@ -234,8 +288,16 @@ export default function ShopPage() {
                       </div>
                       <div className="flex justify-between items-center mt-4">
                         <span className="neo-heading text-3xl">${Number(agent.price).toFixed(0)}</span>
-                        <Button className="group-hover:bg-pink-400 transition-colors">
-                          ADD TO CART
+                        <Button 
+                          className="group-hover:bg-pink-400 transition-colors"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddToCart(agent.id);
+                          }}
+                          disabled={addingToCart === agent.id}
+                        >
+                          {addingToCart === agent.id ? "ADDING..." : "ADD TO CART"}
                           <ShoppingCart className="w-5 h-5 ml-2" />
                         </Button>
                       </div>
@@ -247,14 +309,14 @@ export default function ShopPage() {
           </div>
         )}
 
-        {/* Pagination */}
-        <div className="mt-12 flex justify-center gap-4">
-          <Button variant="outline">PREV</Button>
+        {/* Pagination - TODO: Implement pagination when API supports it */}
+        {/* <div className="mt-12 flex justify-center gap-4">
+          <Button variant="outline" disabled>PREV</Button>
           <Button variant="primary">1</Button>
           <Button variant="outline">2</Button>
           <Button variant="outline">3</Button>
-          <Button variant="outline">NEXT</Button>
-        </div>
+          <Button variant="outline" disabled>NEXT</Button>
+        </div> */}
       </div>
     </div>
   );

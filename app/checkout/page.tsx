@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Lock, CreditCard, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { notifyCartUpdate } from "@/app/contexts/cart-context";
 
 interface CartItem {
   id: string;
@@ -105,6 +106,9 @@ export default function CheckoutPage() {
       }
 
       const orderData = await response.json();
+      
+      // Clear cart after successful order
+      notifyCartUpdate();
       
       // Redirect to confirmation page with order ID
       const params = new URLSearchParams({
